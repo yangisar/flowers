@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Samrat vs Smog: Hall of Fame</title>
+    <title>Samrat vs Smog: Almaty Drift</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -33,7 +33,7 @@
 
         .hud-bar {
             padding: 10px 15px;
-            display: flex; justify-content: space-between;
+            display: flex; justify-content: space-between; align-items: center;
             background: rgba(0,0,0,0.7);
             color: #f1c40f;
             font-size: 22px;
@@ -44,6 +44,18 @@
         .stat-box { display: flex; flex-direction: column; align-items: center; }
         .stat-label { font-size: 14px; color: #bbb; }
         .stat-val { font-size: 24px; }
+
+        /* HEALTH BAR */
+        #hp-container {
+            width: 120px; height: 16px;
+            background: #333; border: 2px solid #fff;
+            position: relative; margin-top: 5px;
+        }
+        #hp-fill {
+            width: 100%; height: 100%;
+            background-color: #e74c3c;
+            transition: width 0.2s;
+        }
 
         /* CONTROLS */
         #controls-area {
@@ -79,7 +91,7 @@
         
         .rus-text {
             color: #3498db;
-            font-family: monospace; /* Better Cyrillic support */
+            font-family: monospace; 
             font-size: 16px;
             margin-bottom: 20px;
             font-weight: bold;
@@ -88,7 +100,6 @@
             border-radius: 4px;
         }
 
-        /* INPUT & BUTTONS */
         input {
             padding: 10px; font-size: 20px; font-family: 'VT323', monospace;
             text-align: center; border: 3px solid #f39c12; background: #222; color: #fff;
@@ -102,16 +113,15 @@
         }
         button:active { transform: translateY(4px); border-bottom: 2px solid #c0392b; }
 
-        /* LEADERBOARD */
         #hof-list {
             margin-top: 20px; width: 100%; max-width: 300px;
             background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
+            max-height: 150px; overflow-y: auto;
         }
         .hof-item {
             display: flex; justify-content: space-between;
             border-bottom: 1px dashed #555; padding: 5px 0; font-size: 20px;
         }
-        .hof-item:first-child { color: #f1c40f; } /* Gold for #1 */
 
         .hidden { display: none !important; }
     </style>
@@ -130,7 +140,9 @@
             </div>
             <div class="stat-box">
                 <span class="stat-label">HEALTH</span>
-                <span class="stat-val" id="health">100</span>
+                <div id="hp-container">
+                    <div id="hp-fill"></div>
+                </div>
             </div>
         </div>
         <div id="controls-area">
@@ -142,7 +154,7 @@
     <div id="menu-screen">
         <h1>SAMRATTAMA</h1>
         <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
-        
+        <p>Watch out for cars!</p>
         <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
         <button onclick="checkNameAndStart()">START GAME</button>
     </div>
@@ -150,10 +162,7 @@
     <div id="game-over-screen" class="hidden">
         <h1 style="color:#e74c3c">GAME OVER</h1>
         <p>Smog destroyed the valley.</p>
-        
-        <div id="hof-list">
-            </div>
-
+        <div id="hof-list"></div>
         <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
 
@@ -166,6 +175,7 @@
     // --- State & Config ---
     let width, height, groundY;
     let isPlaying = false;
+    let animationId; // To track and cancel loop
     let frames = 0;
     
     // Player Data
@@ -182,6 +192,7 @@
     
     let flowers = [];
     let clouds = [];
+    let cars = [];
     let particles = [];
     let smokeParticles = [];
 
@@ -198,7 +209,7 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // --- Inputs (Touch & Mouse) ---
+    // --- Inputs ---
     const handleStart = (x, y, id, isRight) => {
         if(x < width/2) {
             joystick.active = true; joystick.startX = x; joystick.startY = y; joystick.touchId = id;
@@ -240,13 +251,12 @@
         }
     });
 
-    // Mouse for PC
     canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY, 'mouse', e.clientX > width/2));
     canvas.addEventListener('mousemove', e => { if(joystick.active) { joystick.dx = e.clientX-joystick.startX; joystick.dy = e.clientY-joystick.startY; }});
     canvas.addEventListener('mouseup', () => { joystick.active = false; joystick.dx=0; joystick.dy=0; document.getElementById('grab-indicator').classList.remove('pressed'); player.grabbing=false; });
 
 
-    // --- Core Action: Grab Flower OR Destroy Cloud ---
+    // --- Actions ---
     function doAction() {
         if(!isPlaying) return;
         document.getElementById('grab-indicator').classList.add('pressed');
@@ -256,7 +266,7 @@
         let ay = player.y + 10;
         let acted = false;
 
-        // 1. Gather Flower
+        // Gather Flower
         flowers.forEach(f => {
             if(!f.active || acted) return;
             if(Math.hypot(ax - f.x, ay - f.y) < 40 && f.growth >= 1) {
@@ -264,18 +274,16 @@
                 score++;
                 acted = true;
                 updateHUD();
-                // Clean gather (no particles)
             }
         });
 
-        // 2. Destroy Cloud (if no flower gathered)
+        // Destroy Cloud
         if(!acted) {
             clouds.forEach(c => {
                 if(!c.active || acted) return;
                 if(Math.hypot(ax - c.x, ay - c.y) < c.size + 30) {
                     c.active = false;
                     acted = true;
-                    // GREY PIXEL EXPLOSION
                     spawnParticles(c.x, c.y, '#7f8c8d'); 
                 }
             });
@@ -297,18 +305,30 @@
     function startGame() {
         document.getElementById('menu-screen').classList.add('hidden');
         resetGame();
-        isPlaying = true;
-        gameLoop();
     }
 
     function resetGame() {
+        // Stop existing loop if running
+        if(animationId) cancelAnimationFrame(animationId);
+        
         document.getElementById('game-over-screen').classList.add('hidden');
+        
+        // Reset Stats
         score = 0; lostFlowers = 0; frames = 0;
         player.health = 100; player.hurtCooldown = 0;
         player.x = width/2; player.y = groundY + 50;
-        flowers = []; clouds = []; particles = []; smokeParticles = [];
+        
+        // Clear Arrays
+        flowers = []; clouds = []; particles = []; smokeParticles = []; cars = [];
+        
         updateHUD();
+        
+        // Initial Spawns
         for(let i=0; i<3; i++) spawnFlower();
+        
+        // Start Loop
+        isPlaying = true;
+        gameLoop();
     }
 
     function gameOver() {
@@ -318,22 +338,12 @@
     }
 
     function updateHallOfFame() {
-        // 1. Get existing HOF
         let hof = JSON.parse(localStorage.getItem('samrattama_hof') || '[]');
-        
-        // 2. Add current run
         hof.push({ name: userName, score: score });
-        
-        // 3. Sort Descending
         hof.sort((a, b) => b.score - a.score);
-        
-        // 4. Keep top 5
         hof = hof.slice(0, 5);
-        
-        // 5. Save
         localStorage.setItem('samrattama_hof', JSON.stringify(hof));
         
-        // 6. Render
         const list = document.getElementById('hof-list');
         list.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; border-bottom:1px solid #777;">HALL OF FAME</h3>`;
         hof.forEach((entry, idx) => {
@@ -349,7 +359,7 @@
     function updateHUD() {
         document.getElementById('score').innerText = score;
         document.getElementById('lost').innerText = lostFlowers;
-        document.getElementById('health').innerText = player.health + "%";
+        document.getElementById('hp-fill').style.width = player.health + "%";
     }
 
     function spawnFlower() {
@@ -370,6 +380,17 @@
         });
     }
 
+    function spawnCar() {
+        let fromRight = Math.random() > 0.5;
+        cars.push({
+            x: fromRight ? width + 60 : -60,
+            y: groundY + 10, // Driving on the grass/road
+            vx: fromRight ? -7 : 7,
+            w: 50, h: 25,
+            color: Math.random() > 0.5 ? '#e74c3c' : '#3498db'
+        });
+    }
+
     function update() {
         frames++;
         if(player.hurtCooldown > 0) player.hurtCooldown--;
@@ -383,52 +404,54 @@
         player.x = Math.max(0, Math.min(width - player.w, player.x));
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Spawn Logic
+        // Spawners
         if(frames % 120 === 0 && flowers.length < 10) spawnFlower();
         if(frames % 100 === 0) spawnCloud();
+        if(frames % 300 === 0) spawnCar(); // Car every 5 sec approx
 
-        // Update Flowers
+        // Entities Update
         flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
 
-        // Update Clouds
+        // Cars
+        for(let i = cars.length -1; i >= 0; i--) {
+            let c = cars[i];
+            c.x += c.vx;
+            
+            // Collision with Player
+            if(player.hurtCooldown === 0 &&
+               player.x < c.x + c.w && player.x + player.w > c.x &&
+               player.y < c.y + c.h && player.y + player.h > c.y) {
+                hurtPlayer(30);
+                spawnParticles(player.x, player.y, '#e74c3c');
+            }
+
+            // Despawn
+            if(c.x < -100 || c.x > width + 100) cars.splice(i, 1);
+        }
+
+        // Clouds
         clouds.forEach(c => {
             if(!c.active) return;
-            
-            // AI: Target Flowers
             let target = flowers.find(f => f.active && f.growth > 0.5);
             if(target) {
                 let dx = target.x - c.x, dy = target.y - c.y;
                 let dist = Math.hypot(dx, dy);
-                c.x += (dx/dist) * c.speed;
-                c.y += (dy/dist) * c.speed;
-                
-                // Eat Flower
-                if(dist < 15) {
-                    target.active = false;
-                    lostFlowers++;
-                    updateHUD();
-                }
+                c.x += (dx/dist) * c.speed; c.y += (dy/dist) * c.speed;
+                if(dist < 15) { target.active = false; lostFlowers++; updateHUD(); }
             } else {
-                // Drift
-                c.y += Math.sin(frames*0.05)*0.5;
-                c.x += Math.cos(frames*0.05)*0.5;
+                c.y += Math.sin(frames*0.05)*0.5; c.x += Math.cos(frames*0.05)*0.5;
             }
 
-            // Damage Player
             if(player.hurtCooldown === 0) {
                 let pDist = Math.hypot((player.x+player.w/2)-c.x, (player.y+player.h/2)-c.y);
                 if(pDist < c.size + 15) {
-                    player.health -= 25;
-                    player.hurtCooldown = 60;
-                    // Red blood pixels
-                    spawnParticles(player.x, player.y, '#e74c3c'); 
-                    updateHUD();
-                    if(player.health <= 0) gameOver();
+                    hurtPlayer(20);
+                    spawnParticles(player.x, player.y, '#e74c3c');
                 }
             }
         });
 
-        // Background Smoke
+        // Smoke
         if(frames % 4 === 0) {
             smokeParticles.push({
                 x: width * 0.9 + 15 + (Math.random()-0.5)*10,
@@ -438,11 +461,17 @@
             });
         }
 
-        // Filter inactive
         flowers = flowers.filter(f => f.active);
         clouds = clouds.filter(c => c.active);
         particles = particles.filter(p => p.life > 0);
         smokeParticles = smokeParticles.filter(p => p.life > 0);
+    }
+
+    function hurtPlayer(dmg) {
+        player.health -= dmg;
+        player.hurtCooldown = 60;
+        updateHUD();
+        if(player.health <= 0) gameOver();
     }
 
     function spawnParticles(x, y, color) {
@@ -450,7 +479,7 @@
             particles.push({
                 x: x, y: y,
                 vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
-                color: color, life: 25, size: 5 // 5px blocks
+                color: color, life: 25, size: 5
             });
         }
     }
@@ -463,7 +492,7 @@
         // Flowers
         flowers.forEach(f => {
             let h = f.growth * 40, r = f.growth * 8;
-            ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h); // Stem
+            ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h);
             if(f.growth > 0.2) {
                 ctx.fillStyle = f.color;
                 for(let i=0; i<5; i++) {
@@ -474,25 +503,38 @@
             }
         });
 
+        // Cars
+        cars.forEach(c => {
+            // Body
+            ctx.fillStyle = c.color;
+            ctx.fillRect(c.x, c.y, c.w, c.h);
+            // Cabin
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(c.x + 5, c.y - 10, c.w - 10, 10);
+            // Wheels
+            ctx.fillStyle = '#000';
+            ctx.fillRect(c.x + 5, c.y + c.h - 5, 10, 10);
+            ctx.fillRect(c.x + c.w - 15, c.y + c.h - 5, 10, 10);
+        });
+
         drawPlayer();
 
-        // Clouds (Smog)
+        // Clouds
         clouds.forEach(c => {
             ctx.fillStyle = '#bdc3c7';
             ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
             ctx.arc(c.x-c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
             ctx.arc(c.x+c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
             ctx.fill();
-            // Face
             ctx.fillStyle = '#2c3e50';
             ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5);
             ctx.fillRect(c.x-6, c.y+10, 12, 3);
         });
 
-        // Particles (Pixels)
+        // Particles
         particles.forEach(p => {
             ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, p.size, p.size); // SQUARE PIXELS
+            ctx.fillRect(p.x, p.y, p.size, p.size);
             p.x += p.vx; p.y += p.vy; p.life--;
         });
     }
@@ -502,14 +544,14 @@
         let x = player.x, y = player.y, w = player.w, h = player.h;
         
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y+h-5, w, 5);
-        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h); // Body
+        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h);
         ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4);
-        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15); // Face
-        ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10); // Hat
+        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15);
+        ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10);
         
         if(player.grabbing) {
             ctx.fillStyle = '#D2B48C';
-            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8); // Arm
+            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8);
         }
     }
 
@@ -523,14 +565,22 @@
         ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200);
         ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
 
-        let tX = width*0.2; 
-        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(tX, groundY, 80, Math.PI, 0); ctx.fill();
-        ctx.fillStyle = '#c0392b'; ctx.fillRect(tX-4, groundY-250, 8, 180);
+        // Kok Tobe Hill (Curved)
+        let hillX = width * 0.2; 
+        ctx.fillStyle = '#2ecc71'; 
+        ctx.beginPath(); 
+        ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); // Ellipse for curvature
+        ctx.fill();
+
+        // TV Tower (Left of hill center, grey)
+        let towerX = hillX - 20; 
+        ctx.fillStyle = '#7f8c8d'; // Grey
+        ctx.fillRect(towerX - 4, groundY - 250, 8, 180); // Stick
+        ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill(); // Ball
 
         // Power Plant
         let pX = width*0.9;
         ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
-        // Smoke Particles
         smokeParticles.forEach(p => {
              ctx.fillStyle = '#7f8c8d'; 
              ctx.fillRect(p.x, p.y, p.size, p.size);
@@ -542,7 +592,7 @@
         if(!isPlaying) return;
         update();
         draw();
-        requestAnimationFrame(gameLoop);
+        animationId = requestAnimationFrame(gameLoop);
     }
     
     // Initial render
