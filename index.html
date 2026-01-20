@@ -25,7 +25,7 @@
 
         a { color: #f1c40f; text-decoration: none; }
 
-        /* UI LAYOUT */
+        /* UI LAYOUT (Gameplay) */
         #ui-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -42,7 +42,7 @@
             font-size: 20px;
             text-shadow: 2px 2px #000;
             border-bottom: 2px solid #555;
-            pointer-events: auto; /* Allow clicking stats if needed */
+            pointer-events: auto; 
         }
         
         .stat-group { display: flex; gap: 20px; }
@@ -88,26 +88,18 @@
         }
         .pressed { background: rgba(46, 204, 113, 0.9) !important; color: white !important; transform: scale(0.95); }
 
-        /* CREDITS FOOTER */
-        #credits {
-            position: absolute; bottom: 5px; width: 100%;
-            text-align: center; color: rgba(255,255,255,0.6);
-            font-size: 12px; font-family: sans-serif;
-            pointer-events: auto; z-index: 20;
-        }
-        #credits a { color: #f39c12; font-weight: bold; }
-
-        /* SCREENS */
+        /* SCREENS (Menu & Game Over) */
         #menu-screen, #game-over-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(30, 30, 30, 0.98); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: white; pointer-events: auto; padding: 20px; box-sizing: border-box;
+            text-align: center;
         }
 
-        h1 { font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 10px 0; text-align: center; line-height: 1; }
-        h2 { font-size: 30px; color: #2ecc71; margin: 0 0 20px 0; text-shadow: 2px 2px #000; }
-        p { font-size: 18px; color: #bdc3c7; text-align: center; margin: 5px 0; max-width: 400px; }
+        h1 { font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 5px 0; line-height: 1; }
+        h2 { font-size: 30px; color: #2ecc71; margin: 0 0 15px 0; text-shadow: 2px 2px #000; }
+        p { font-size: 18px; color: #bdc3c7; margin: 5px 0; max-width: 400px; }
         
         .rus-text {
             color: #3498db;
@@ -118,6 +110,14 @@
             background: rgba(0,0,0,0.5);
             padding: 10px;
             border-radius: 4px;
+        }
+        
+        .share-text {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #f1c40f;
+            border-top: 1px dashed #555;
+            padding-top: 10px;
         }
 
         input {
@@ -134,14 +134,24 @@
         button:active { transform: translateY(4px); border-bottom: 2px solid #c0392b; }
 
         #hof-list {
-            margin-top: 20px; width: 100%; max-width: 300px;
+            margin-top: 15px; width: 100%; max-width: 300px;
             background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
-            max-height: 150px; overflow-y: auto;
+            max-height: 120px; overflow-y: auto;
         }
         .hof-item {
             display: flex; justify-content: space-between;
             border-bottom: 1px dashed #555; padding: 5px 0; font-size: 20px;
         }
+
+        /* Footer inside screens */
+        .screen-footer {
+            margin-top: auto; /* Push to bottom */
+            padding-top: 20px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            font-family: sans-serif;
+        }
+        .screen-footer a { color: #f39c12; font-weight: bold; }
 
         .hidden { display: none !important; }
     </style>
@@ -182,25 +192,40 @@
         </div>
     </div>
 
-    <div id="credits">
-        Created using AI tools by Yadykar Ibraimov <a href="https://www.instagram.com/yangisar/" target="_blank">@yangisar</a>
-    </div>
-
     <div id="menu-screen">
-        <h1>SAMRATTAMA</h1>
-        <h2>FLOWERS</h2>
-        <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
-        <p>Difficulty increases over time!</p>
-        <p style="color:#2ecc71; font-size:14px;">💧 Water Drops clean the air</p>
-        <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
-        <button onclick="checkNameAndStart()">START GAME</button>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+            <h1>SAMRATTAMA</h1>
+            <h2>FLOWERS</h2>
+            <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
+            <p>Difficulty increases over time!</p>
+            <p style="color:#2ecc71; font-size:14px;">💧 Water Drops clean the air</p>
+            <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
+            <button onclick="checkNameAndStart()">START GAME</button>
+        </div>
+        
+        <div class="screen-footer">
+            Created using AI tools by Yadykar Ibraimov <a href="https://www.instagram.com/yangisar/" target="_blank">@yangisar</a>
+        </div>
     </div>
 
     <div id="game-over-screen" class="hidden">
-        <h1 style="color:#e74c3c">GAME OVER</h1>
-        <p>The air became too toxic.</p>
-        <div id="hof-list"></div>
-        <button onclick="resetGame()">PLAY AGAIN</button>
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+            <h1 style="color:#e74c3c">GAME OVER</h1>
+            <p>The air became too toxic.</p>
+            
+            <div id="hof-list"></div>
+            
+            <div class="share-text">
+                Share your results online<br>
+                Сделай скриншот и поделись результатами в сети и отмечай нас=))
+            </div>
+
+            <button onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+
+        <div class="screen-footer">
+            Created using AI tools by Yadykar Ibraimov <a href="https://www.instagram.com/yangisar/" target="_blank">@yangisar</a>
+        </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -458,7 +483,7 @@
     function spawnCar() {
         let fromRight = Math.random() > 0.5;
         let carY = Math.random() * (height - groundY - 60) + groundY + 10;
-        let speed = (Math.random() > 0.5 ? 6 : 8) * Math.min(2.5, difficultyFactor); // Cap speed at 2.5x
+        let speed = (Math.random() > 0.5 ? 6 : 8) * Math.min(2.5, difficultyFactor); 
 
         cars.push({
             x: fromRight ? width + 60 : -60,
@@ -482,7 +507,6 @@
         if(player.hurtCooldown > 0) player.hurtCooldown--;
         
         // --- Aggressive Difficulty Ramp ---
-        // Every 5 seconds (300 frames), ramp up significantly
         if(frames % 300 === 0) {
             difficultyFactor += 0.25; 
         }
@@ -511,11 +535,9 @@
         // --- Spawners ---
         if(frames % 120 === 0 && flowers.length < 10) spawnFlower();
         
-        // Clouds spawn rate increases dramatically with difficulty
         let cloudRate = Math.max(15, Math.floor(100 / difficultyFactor));
         if(frames % cloudRate === 0) spawnCloud();
         
-        // Car spawn rate
         let carRate = Math.max(30, Math.floor(180 / difficultyFactor));
         if(frames % carRate === 0) spawnCar(); 
         
@@ -555,9 +577,9 @@
                 
                 // FLOWER POP LOGIC
                 if(dist < 15) { 
-                    target.active = false; // Kill flower
+                    target.active = false; 
                     lostFlowers++; 
-                    spawnParticles(target.x, target.y, '#7f8c8d'); // Grey Ash explosion
+                    spawnParticles(target.x, target.y, '#7f8c8d'); // Grey Ash
                     updateHUD(); 
                 }
             } else {
