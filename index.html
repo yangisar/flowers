@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Glacier Hike</title>
+    <title>Flower Hike '85</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            touch-action: none; /* Prevents browser scrolling on mobile */
+            background-color: #222;
+            font-family: 'Courier New', Courier, monospace; /* Retro font */
+            touch-action: none;
         }
         canvas {
             display: block;
+            margin: 0 auto;
+            /* Keep aspect ratio crisp */
+            image-rendering: pixelated; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         #ui-layer {
             position: absolute;
@@ -22,74 +26,115 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+            padding: 10px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
-            box-sizing: border-box;
         }
-        .hud {
-            color: white;
-            text-shadow: 2px 2px 0 #000;
-            font-size: 20px;
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .retro-text {
+            color: #fff;
+            text-shadow: 2px 2px 0px #000;
+            font-size: 18px;
             font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 2px solid #fff;
         }
+        #health-container {
+            color: #ff69b4; /* Hot pink hearts */
+            font-size: 24px;
+        }
+        /* CRT Scanline Effect Overlay */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+
         #start-screen, #game-over-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(34, 34, 34, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
             pointer-events: auto;
-            z-index: 10;
+            z-index: 100;
+            text-align: center;
         }
-        h1 { margin: 0 0 20px 0; color: #ffeb3b; text-align: center;}
-        p { text-align: center; max-width: 300px; line-height: 1.5; }
+        h1 { 
+            color: #ff9; 
+            text-shadow: 4px 4px 0 #d32f2f; 
+            font-size: 40px; 
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        p { font-size: 16px; margin: 5px 0 20px 0; color: #ccc;}
+        
         button {
-            padding: 15px 40px;
-            font-size: 20px;
-            background: #4CAF50;
+            background: #ff69b4;
             color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
+            border: 4px solid #fff;
+            padding: 15px 30px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 20px;
             font-weight: bold;
-            box-shadow: 0 4px 0 #2E7D32;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 4px 4px 0px #000;
         }
-        button:active { transform: translateY(4px); box-shadow: none; }
+        button:active { transform: translate(4px, 4px); box-shadow: none; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
+    <div class="scanlines"></div>
+
     <div id="ui-layer">
-        <div class="hud">
-            <div>🌺 Flowers: <span id="score-display">0</span></div>
-            <div>❤️ Health: <span id="health-display">100</span>%</div>
-            <div>🏔️ Altitude: <span id="alt-display">0</span>m</div>
+        <div class="hud-top">
+            <div class="retro-text">SCORE: <span id="score-display">0000</span></div>
+            <div id="health-container" class="retro-text">❤❤❤</div>
         </div>
+        <div class="retro-text" style="align-self: center;">ALT: <span id="alt-display">0</span>m</div>
     </div>
 
     <div id="start-screen">
-        <h1>Valley to Glacier</h1>
-        <p>Hike up the vertical valley.</p>
-        <p>Collect flowers 🌺.</p>
-        <p>Avoid the rushing water streams 💧.</p>
-        <button onclick="startGame()">START HIKE</button>
+        <h1>FLOWER<br>HIKE '85</h1>
+        <p>AUTO-RUN ENABLED!</p>
+        <p>Slide Left/Right to Steer</p>
+        <p>Avoid Blue Water!</p>
+        <button onclick="startGame()">START RUN</button>
     </div>
 
     <div id="game-over-screen" class="hidden">
-        <h1 id="end-title">Game Over</h1>
-        <p id="end-msg">The waters took you.</p>
+        <h1 id="end-title">GAME OVER</h1>
         <p>Final Score: <span id="final-score">0</span></p>
-        <button onclick="resetGame()">HIKE AGAIN</button>
+        <button onclick="resetGame()">TRY AGAIN</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -98,103 +143,95 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Game Constants
-    const MAP_HEIGHT = 20000; // The total length of the hike
-    const PLAYER_SPEED = 5;
-    const VIEWPORT_OFFSET = 0.7; // Player stays at 70% down the screen
+    // Make drawing look pixelated
+    ctx.imageSmoothingEnabled = false;
 
-    // Game State
+    // --- Game Configuration ---
+    const MAP_HEIGHT = 25000; 
+    const RUN_SPEED = 6;  // Auto-run speed
+    const PIXEL_SIZE = 4; // Size of our "retro pixels"
+    
+    // Biome Colors (80s Palette)
+    const COLORS = {
+        meadow: '#98FB98', // Pale Green
+        forest: '#2E8B57', // Sea Green
+        mud:    '#D2691E', // Chocolate
+        rock:   '#778899', // Light Slate Gray
+        snow:   '#E0FFFF', // Light Cyan
+        water:  '#00BFFF', // Deep Sky Blue
+        foam:   '#F0F8FF', // Alice Blue
+        flower: ['#FF69B4', '#FFFF00', '#FF4500', '#DDA0DD'] // Hot Pink, Yellow, Orange, Plum
+    };
+
+    // State
     let gameRunning = false;
     let width, height;
     let cameraY = 0;
     let score = 0;
-    let health = 100;
-    let frameCount = 0;
-
+    let hp = 3;
+    let frame = 0;
+    
     // Entities
-    let player = { x: 0, y: 0, radius: 15 };
-    let flowers = [];
+    let player = { x: 0, y: 0, w: 24, h: 32 }; // Dimensions in real pixels
+    let entities = []; // Flowers and Decor
     let streams = [];
-    let particles = []; // For effects
-
+    let particles = [];
+    
     // Input
-    let input = { x: 0, y: 0, active: false };
+    let targetX = 0;
 
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        if(!gameRunning && health > 0) {
-            player.x = width / 2;
-            player.y = MAP_HEIGHT - 200;
+        // Keep crisp
+        ctx.imageSmoothingEnabled = false;
+        if(!gameRunning) {
+            targetX = width / 2;
         }
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // Controls (Touch & Mouse)
-    function handleInputStart(e) {
-        input.active = true;
-        updateInputPos(e);
-    }
-    function handleInputMove(e) {
-        if(input.active) updateInputPos(e);
-    }
-    function handleInputEnd() {
-        input.active = false;
-    }
-    function updateInputPos(e) {
+    // --- Input Handling (Steering Only) ---
+    function handleInput(e) {
+        if(!gameRunning) return;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        
-        // We want the player to move towards the touch, relative to camera
-        // But simpler: The player follows the finger on X, and moves Up/Down based on finger Y relative to screen
-        input.x = clientX;
-        input.y = clientY;
+        targetX = clientX;
     }
+    
+    window.addEventListener('mousemove', handleInput);
+    window.addEventListener('touchmove', handleInput);
+    window.addEventListener('touchstart', handleInput);
 
-    window.addEventListener('touchstart', handleInputStart);
-    window.addEventListener('touchmove', handleInputMove);
-    window.addEventListener('touchend', handleInputEnd);
-    window.addEventListener('mousedown', handleInputStart);
-    window.addEventListener('mousemove', handleInputMove);
-    window.addEventListener('mouseup', handleInputEnd);
-
-    // --- Biome Logic ---
-    function getGroundColor(y) {
-        // y starts at MAP_HEIGHT (bottom) and goes to 0 (top)
-        const progress = 1 - (y / MAP_HEIGHT); // 0 at bottom, 1 at top
-
-        if (progress < 0.3) return '#4CAF50'; // Green Valley
-        if (progress < 0.5) return '#388E3C'; // Deep Green
-        if (progress < 0.65) return '#795548'; // Brown Earth
-        if (progress < 0.85) return '#607D8B'; // Grey Rock
-        return '#ECEFF1'; // Snow
-    }
-
+    // --- Setup ---
     function initGame() {
         player.x = width / 2;
-        player.y = MAP_HEIGHT - 300;
+        player.y = MAP_HEIGHT - 200;
+        cameraY = player.y - height + 200;
+        targetX = width / 2;
+        
         score = 0;
-        health = 100;
-        flowers = [];
+        hp = 3;
+        entities = [];
         streams = [];
         particles = [];
         
-        // Generate Flowers
-        for(let i=0; i<300; i++) {
-            let fy = Math.random() * (MAP_HEIGHT - 1000) + 500; // Keep away from very top/bottom
-            // Don't spawn flowers on the glacier (top 15%)
-            if (fy > MAP_HEIGHT * 0.15) {
-                flowers.push({
+        // Procedural Generation of Static Objects (Flowers & Decor)
+        for(let y = MAP_HEIGHT - 500; y > 1000; y -= 40) { // Every 40px
+            // Density depends on biome, fewer flowers at top
+            if(Math.random() > 0.3) {
+                let type = 'flower';
+                if(Math.random() > 0.7) type = 'decor'; // Grass tuft or rock
+
+                entities.push({
+                    type: type,
                     x: Math.random() * (width - 40) + 20,
-                    y: fy,
-                    color: `hsl(${Math.random()*360}, 70%, 60%)`, // Varied colors
-                    size: Math.random() * 5 + 5,
-                    petals: Math.floor(Math.random() * 4) + 4
+                    y: y,
+                    color: COLORS.flower[Math.floor(Math.random() * COLORS.flower.length)],
+                    collected: false
                 });
             }
         }
-        
         updateHUD();
     }
 
@@ -214,243 +251,269 @@
         gameRunning = false;
         const screen = document.getElementById('game-over-screen');
         const title = document.getElementById('end-title');
-        const msg = document.getElementById('end-msg');
-        
         screen.classList.remove('hidden');
         document.getElementById('final-score').innerText = score;
-
+        
         if(win) {
-            title.innerText = "Glacier Reached!";
-            title.style.color = "#4FC3F7";
-            msg.innerText = "You successfully hiked the valley.";
+            title.innerText = "YOU REACHED THE GLACIER!";
+            title.style.color = "#87CEEB";
         } else {
-            title.innerText = "Game Over";
-            title.style.color = "#ff5252";
-            msg.innerText = "The streams were too strong.";
+            title.innerText = "GAME OVER";
+            title.style.color = "#FF69B4";
         }
     }
 
-    function spawnStream() {
-        // Spawn a stream slightly above the camera view
-        const spawnY = cameraY - 100;
-        const streamWidth = Math.random() * 60 + 20;
-        
-        streams.push({
-            x: Math.random() * width,
-            y: spawnY,
-            w: streamWidth,
-            h: 50, // head length
-            speed: Math.random() * 5 + 3,
-            trail: [] // to draw the long strip behind it
-        });
-    }
-
+    // --- Core Logic ---
     function update() {
         if(!gameRunning) return;
-        frameCount++;
+        frame++;
 
-        // 1. Player Movement (Follow Touch logic)
-        if(input.active) {
-            // Horizontal move
-            const dx = input.x - player.x;
-            player.x += dx * 0.1; // Smooth follow
+        // 1. Auto Run Upwards
+        player.y -= RUN_SPEED;
 
-            // Vertical move (Control speed of hiking)
-            // If touch is high on screen, move up faster
-            const screenY = player.y - cameraY;
-            const targetScreenY = input.y;
-            const dy = targetScreenY - screenY;
-            
-            // Limit player movement speed
-            if(Math.abs(dy) > 5) {
-                player.y += Math.sign(dy) * 5;
-            }
-        }
+        // 2. Steering (Smooth lerp towards finger position)
+        player.x += (targetX - player.x) * 0.15;
 
-        // Clamp Player
-        if(player.x < player.radius) player.x = player.radius;
-        if(player.x > width - player.radius) player.x = width - player.radius;
-        if(player.y > MAP_HEIGHT) player.y = MAP_HEIGHT;
-        if(player.y < 0) {
-            gameOver(true); // Win condition
+        // Clamp bounds
+        if(player.x < 10) player.x = 10;
+        if(player.x > width - 10) player.x = width - 10;
+
+        // Win Condition
+        if(player.y < 200) {
+            gameOver(true);
             return;
         }
 
-        // 2. Camera Follow
-        // Keep player at 70% height of screen usually
-        let targetCamY = player.y - (height * 0.7);
-        // Clamp camera to map bounds
-        if(targetCamY < 0) targetCamY = 0;
-        if(targetCamY > MAP_HEIGHT - height) targetCamY = MAP_HEIGHT - height;
+        // 3. Camera (Locks to player Y)
+        cameraY = player.y - (height * 0.8); // Player is near top/middle now
         
-        // Smooth camera
-        cameraY += (targetCamY - cameraY) * 0.1;
-
-        // 3. Obstacles (Streams)
-        // Spawn chance increases as you go higher
-        const difficulty = 1 - (player.y / MAP_HEIGHT); // 0 to 1
-        if (frameCount % Math.max(20, Math.floor(60 - (difficulty * 40))) === 0) {
-            spawnStream();
+        // 4. Streams (Obstacles)
+        // Spawn randomly above the screen
+        if(frame % 40 === 0) {
+            let spawnY = cameraY - 50;
+            // Streams fall DOWN (y increases)
+            streams.push({
+                x: Math.random() * width,
+                y: spawnY,
+                w: Math.random() * 40 + 20,
+                h: 20, 
+                speed: Math.random() * 4 + 8, // Faster than player runs
+                active: true
+            });
         }
 
-        for (let i = streams.length - 1; i >= 0; i--) {
-            let s = streams[i];
+        // Stream Logic
+        streams.forEach(s => {
             s.y += s.speed;
-            s.h += s.speed; // Make it look like a stretching stream
+            s.h += s.speed; // Elongate to look like a strip
 
-            // Collision with Player
-            // Simple AABB vs Circle check
-            if (player.x > s.x && player.x < s.x + s.w &&
-                player.y > s.y && player.y < s.y + s.h) {
-                health -= 1;
-                if(frameCount % 5 === 0) createParticles(player.x, player.y, 'red');
+            // Collision: Simple Box Box
+            if(s.active && 
+               player.x < s.x + s.w && player.x + player.w > s.x &&
+               player.y < s.y + s.h && player.y + player.h > s.y) {
+                
+                hurtPlayer();
+                s.active = false; // Disable collision after hit so you don't die instantly
             }
+        });
 
-            // Cleanup streams that are far below camera
-            if (s.y > cameraY + height + 200) {
-                streams.splice(i, 1);
-                continue;
-            }
-
-            // Destroy flowers in path
-            for (let j = flowers.length - 1; j >= 0; j--) {
-                let f = flowers[j];
-                if (f.x > s.x && f.x < s.x + s.w &&
-                    f.y > s.y && f.y < s.y + s.h) {
-                    createParticles(f.x, f.y, f.color); // Explode flower
-                    flowers.splice(j, 1);
+        // 5. Flower Collection
+        entities.forEach(e => {
+            if(!e.collected && e.type === 'flower') {
+                // Distance check
+                const dx = player.x - e.x;
+                const dy = player.y - e.y;
+                if(Math.sqrt(dx*dx + dy*dy) < 30) {
+                    e.collected = true;
+                    score += 100;
+                    spawnSparkles(e.x, e.y, e.color);
+                    updateHUD();
                 }
             }
-        }
+        });
 
-        // 4. Collect Flowers
-        for (let i = flowers.length - 1; i >= 0; i--) {
-            let f = flowers[i];
-            let dist = Math.hypot(player.x - f.x, player.y - f.y);
-            if(dist < player.radius + f.size) {
-                score++;
-                createParticles(f.x, f.y, 'gold');
-                flowers.splice(i, 1);
-            }
-        }
-
-        // 5. Game Over Check
-        if(health <= 0) gameOver(false);
-
+        // Cleanup
+        streams = streams.filter(s => s.y < cameraY + height + 100);
+        
         updateHUD();
     }
 
-    function createParticles(x, y, color) {
-        for(let i=0; i<5; i++) {
+    function hurtPlayer() {
+        hp--;
+        // Screen shake effect logic could go here
+        spawnSparkles(player.x, player.y, '#FF0000');
+        if(hp <= 0) gameOver(false);
+    }
+
+    function spawnSparkles(x, y, color) {
+        for(let i=0; i<8; i++) {
             particles.push({
                 x: x, y: y,
                 vx: (Math.random() - 0.5) * 10,
                 vy: (Math.random() - 0.5) * 10,
-                life: 20,
-                color: color
+                life: 30,
+                color: color,
+                size: Math.random() * 4 + 2
             });
         }
     }
 
     function updateHUD() {
-        document.getElementById('score-display').innerText = score;
-        document.getElementById('health-display').innerText = Math.floor(health);
+        document.getElementById('score-display').innerText = score.toString().padStart(4, '0');
         document.getElementById('alt-display').innerText = Math.floor(MAP_HEIGHT - player.y);
+        
+        let hearts = "";
+        for(let i=0; i<hp; i++) hearts += "❤";
+        document.getElementById('health-container').innerHTML = hearts;
+    }
+
+    // --- Rendering (The 80s Style) ---
+    
+    // Helper to draw a pixel rectangle
+    function drawPixelRect(x, y, w, h, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
+    }
+
+    // Helper to draw the hero sprite (procedurally)
+    function drawHero(x, y) {
+        // Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillRect(x-8, y+12, 24, 6);
+
+        // Body (Yellow Jacket)
+        drawPixelRect(x-10, y-10, 20, 20, '#FFD700'); 
+        // Backpack (Brown)
+        drawPixelRect(x-4, y-12, 8, 24, '#8B4513');
+        // Head (Peach)
+        drawPixelRect(x-6, y-20, 12, 10, '#FFCC99');
+        // Hat (Red)
+        drawPixelRect(x-8, y-24, 16, 4, '#FF4500');
+        // Legs (moving animation)
+        let legOffset = Math.sin(frame * 0.5) * 6;
+        drawPixelRect(x-8, y+10 + legOffset, 6, 8, '#000080'); // Left
+        drawPixelRect(x+2, y+10 - legOffset, 6, 8, '#000080'); // Right
+    }
+
+    // Biome Calculation
+    function getBiomeColor(y) {
+        const progress = 1 - (y / MAP_HEIGHT); // 0 (bottom) to 1 (top)
+        
+        if(progress < 0.2) return COLORS.meadow;
+        if(progress < 0.45) return COLORS.forest;
+        if(progress < 0.6) return COLORS.mud;
+        if(progress < 0.8) return COLORS.rock;
+        return COLORS.snow;
     }
 
     function draw() {
-        // Clear screen
+        // Clear
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, width, height);
 
         ctx.save();
-        // Shift context by camera
         ctx.translate(0, -cameraY);
 
-        // 1. Draw Background (Chunks)
-        // Optimization: Draw large rects for visible area
-        // We draw the background in vertical strips based on camera
+        // 1. Draw Terrain Background
+        // We draw chunks slightly larger than screen
+        let startY = Math.floor(cameraY / 100) * 100;
+        let endY = startY + height + 200;
+
+        for(let y = startY; y < endY; y+=50) {
+            ctx.fillStyle = getBiomeColor(y);
+            // Draw band
+            ctx.fillRect(0, y, width, 52); 
+            
+            // Add texture (Dithering/noise) to make it look retro
+            if(y % 100 === 0) {
+                ctx.fillStyle = "rgba(0,0,0,0.05)";
+                for(let k=0; k<width; k+=10) {
+                     if(Math.random()>0.5) ctx.fillRect(k, y, 4, 4);
+                }
+            }
+        }
+
+        // 2. Draw Decor & Flowers
         let viewTop = cameraY;
         let viewBot = cameraY + height;
-        
-        // Draw the background color gradient
-        let gradient = ctx.createLinearGradient(0, viewTop, 0, viewBot);
-        gradient.addColorStop(0, getGroundColor(viewTop));
-        gradient.addColorStop(1, getGroundColor(viewBot));
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, viewTop, width, height);
 
-        // 2. Draw Flowers
-        flowers.forEach(f => {
-            // Optimization: Only draw if visible
-            if(f.y > viewTop - 50 && f.y < viewBot + 50) {
-                ctx.fillStyle = f.color;
-                ctx.beginPath();
-                ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
-                ctx.fill();
-                // Center
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(f.x, f.y, f.size/2, 0, Math.PI * 2);
-                ctx.fill();
+        entities.forEach(e => {
+            if(e.y > viewTop - 50 && e.y < viewBot + 50 && !e.collected) {
+                if(e.type === 'flower') {
+                    // Stem
+                    drawPixelRect(e.x-2, e.y, 4, 10, '#006400');
+                    // Petals
+                    drawPixelRect(e.x-6, e.y-6, 12, 12, e.color);
+                    // Center
+                    drawPixelRect(e.x-2, e.y-2, 4, 4, '#FFF');
+                } else {
+                    // Decor (Grass tuft or rock)
+                    if(e.y > MAP_HEIGHT * 0.6) { // Grass/Forest
+                         ctx.fillStyle = '#004d00';
+                         ctx.fillRect(e.x, e.y, 4, 8);
+                         ctx.fillRect(e.x+4, e.y+4, 4, 4);
+                    } else { // Rock
+                         ctx.fillStyle = '#606060';
+                         ctx.fillRect(e.x, e.y, 12, 8);
+                    }
+                }
             }
         });
 
         // 3. Draw Streams
-        ctx.fillStyle = 'rgba(66, 165, 245, 0.8)';
         streams.forEach(s => {
-             if(s.y + s.h > viewTop && s.y < viewBot) {
+            if(s.y + s.h > viewTop && s.y < viewBot) {
+                // Main Water
+                ctx.fillStyle = COLORS.water;
+                // Patterned water (Stripes)
                 ctx.fillRect(s.x, s.y, s.w, s.h);
-                // Foam at bottom
-                ctx.fillStyle = 'rgba(255,255,255,0.6)';
-                ctx.fillRect(s.x, s.y + s.h - 10, s.w, 10);
-                ctx.fillStyle = 'rgba(66, 165, 245, 0.8)';
-             }
+                
+                ctx.fillStyle = '#4FC3F7'; // Lighter blue stripes
+                for(let wy = s.y; wy < s.y + s.h; wy += 20) {
+                    ctx.fillRect(s.x + 4, wy + (frame % 20), s.w - 8, 4);
+                }
+
+                // Foam at head
+                ctx.fillStyle = COLORS.foam;
+                ctx.fillRect(s.x, s.y + s.h - 8, s.w, 8);
+            }
         });
 
         // 4. Draw Player
-        ctx.fillStyle = '#FFEB3B'; // Hiker jacket color
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#F57F17';
-        ctx.stroke();
-        
-        // Backpack
-        ctx.fillStyle = '#795548';
-        ctx.fillRect(player.x - 10, player.y - 12, 20, 10);
+        drawHero(player.x, player.y);
 
-        // 5. Draw Glacier (Top of map)
-        if (viewTop < 1000) {
-            ctx.fillStyle = '#E3F2FD';
-            ctx.fillRect(0, -500, width, 500); // The ice cap
-            
-            // Melting drips
-            ctx.fillStyle = 'rgba(33, 150, 243, 0.5)';
-            for(let i=0; i<10; i++) {
-                ctx.beginPath();
-                ctx.arc(i * (width/10), 0 + (frameCount % 20) * 2, 5, 0, Math.PI*2);
-                ctx.fill();
-            }
-        }
-
-        // 6. Draw Particles
-        particles.forEach((p, index) => {
+        // 5. Particles
+        particles.forEach((p, idx) => {
             ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, 4, 4);
+            ctx.fillRect(p.x, p.y, p.size, p.size);
             p.x += p.vx;
             p.y += p.vy;
             p.life--;
-            if(p.life <= 0) particles.splice(index, 1);
+            if(p.life <= 0) particles.splice(idx, 1);
         });
+
+        // 6. The Glacier (Goal)
+        if(viewTop < 600) {
+            ctx.fillStyle = "#F0FFFF"; // Glacier Color
+            ctx.fillRect(0, -800, width, 1000);
+            
+            // Face on the glacier
+            ctx.fillStyle = "#000";
+            // Eyes
+            ctx.fillRect(width/2 - 40, -200, 20, 20);
+            ctx.fillRect(width/2 + 20, -200, 20, 20);
+            // Smile
+            ctx.fillRect(width/2 - 40, -150, 100, 10);
+            ctx.fillRect(width/2 - 40, -150, 10, 30);
+            ctx.fillRect(width/2 + 50, -150, 10, 30);
+            ctx.fillRect(width/2 - 40, -120, 100, 10);
+        }
 
         ctx.restore();
 
         if(gameRunning) requestAnimationFrame(() => { update(); draw(); });
     }
 
-    // Start loop
     requestAnimationFrame(() => { draw(); });
 
 </script>
