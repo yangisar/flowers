@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Samrat: Sword of Almaty</title>
+    <title>SAMRATTAMA FLOWERS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -160,8 +160,8 @@
                     <span class="stat-val" id="lost" style="color:#e74c3c">0</span>
                 </div>
                 <div class="stat-box">
-                    <span class="stat-label">KILLED</span>
-                    <span class="stat-val" id="smog-kill" style="color:#95a5a6">0</span>
+                    <span class="stat-label">CLEARED</span>
+                    <span class="stat-val" id="smog-cleared" style="color:#95a5a6">0</span>
                 </div>
                 <div class="stat-box">
                     <span class="stat-label">HP</span>
@@ -179,8 +179,8 @@
     <div id="menu-screen">
         <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
             <h1>SAMRATTAMA</h1>
-            <h2>SWORD OF ALMATY</h2>
-            <p class="rus-text">Уничтожай тучи и машины мечом, чтобы защитить цветы!</p>
+            <h2>FLOWERS</h2>
+            <p class="rus-text">Защити цветы от смога</p>
             <p>⚔️ Destroy Cars to create Flowers!</p>
             <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
             <button onclick="checkNameAndStart()">START GAME</button>
@@ -198,7 +198,7 @@
             <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; margin:10px;">
                 <div>FINAL FLOWERS: <span id="end-flowers" style="color:#f1c40f">0</span></div>
                 <div>LOST: <span id="end-lost" style="color:#e74c3c">0</span></div>
-                <div>ENEMIES DESTROYED: <span id="end-killed" style="color:#95a5a6">0</span></div>
+                <div>SMOG CLEARED: <span id="end-cleared" style="color:#95a5a6">0</span></div>
             </div>
 
             <div id="hof-list"></div>
@@ -232,7 +232,7 @@
     let userName = "Hero";
     let activeFlowers = 0;
     let lostFlowers = 0;
-    let enemiesKilled = 0; 
+    let smogCleared = 0; // Renamed from enemiesKilled
     let rainTimer = 0; 
     let pmLevel = 35;
 
@@ -320,19 +320,18 @@
         player.attacking = true;
         player.attackTimer = 10; // Frames for sword animation
 
-        // Sword Hitbox (Front of player)
-        let reach = 50;
+        let reach = 60;
         let cx = player.x + player.w/2 + (player.facingRight ? 20 : -20);
         let cy = player.y + player.h/2;
         
         let hitSomething = false;
 
-        // 1. Destroy Clouds
+        // 1. Clear Smog
         clouds.forEach(c => {
             if(!c.active) return;
             if(Math.hypot(cx - c.x, cy - c.y) < c.size + reach) {
                 c.active = false;
-                enemiesKilled++;
+                smogCleared++;
                 spawnParticles(c.x, c.y, '#7f8c8d'); 
                 pmLevel = Math.max(35, pmLevel - 15);
                 hitSomething = true;
@@ -341,26 +340,23 @@
 
         // 2. Destroy Cars -> Create Flowers
         cars.forEach((c, idx) => {
-            if( // Simple Box collision for sword vs car
-               cx > c.x && cx < c.x + c.w &&
-               cy > c.y - 20 && cy < c.y + c.h + 20
+            if(
+               cx > c.x - 20 && cx < c.x + c.w + 20 &&
+               cy > c.y - 30 && cy < c.y + c.h + 30
             ) {
-                // Remove Car
                 cars.splice(idx, 1);
-                enemiesKilled++;
+                smogCleared++; // Cars count as smog sources
                 
-                // Spawn Flower at car location
                 spawnFlowerAt(c.x + c.w/2, c.y + c.h);
-                
                 spawnParticles(c.x + c.w/2, c.y, '#e74c3c'); 
-                spawnParticles(c.x + c.w/2, c.y, '#f1c40f'); // Sparkles
+                spawnParticles(c.x + c.w/2, c.y, '#f1c40f'); 
                 hitSomething = true;
             }
         });
 
         // 3. Grab Water Drop
         waterDrops.forEach((w, idx) => {
-             if(Math.hypot(cx - w.x, cy - w.y) < 40) {
+             if(Math.hypot(cx - w.x, cy - w.y) < 50) {
                 activateRain();
                 waterDrops.splice(idx, 1);
              }
@@ -377,7 +373,7 @@
         clouds.forEach(c => {
             if(c.active) {
                 c.active = false;
-                enemiesKilled++;
+                smogCleared++;
                 spawnParticles(c.x, c.y, '#7f8c8d');
             }
         });
@@ -405,7 +401,7 @@
         if(animationId) cancelAnimationFrame(animationId);
         document.getElementById('game-over-screen').classList.add('hidden');
         
-        activeFlowers = 0; lostFlowers = 0; enemiesKilled = 0; frames = 0; rainTimer = 0;
+        activeFlowers = 0; lostFlowers = 0; smogCleared = 0; frames = 0; rainTimer = 0;
         difficultyFactor = 1.0;
         pmLevel = 35;
 
@@ -416,7 +412,7 @@
         flowers = []; clouds = []; cars = []; waterDrops = [];
         particles = []; smokeParticles = []; exhaustParticles = []; rainParticles = [];
         
-        for(let i=0; i<3; i++) spawnFlower();
+        for(let i=0; i<5; i++) spawnFlower(); // Start with more flowers
         updateHUD();
         isPlaying = true;
         gameLoop();
@@ -428,15 +424,14 @@
         
         document.getElementById('end-flowers').innerText = activeFlowers;
         document.getElementById('end-lost').innerText = lostFlowers;
-        document.getElementById('end-killed').innerText = enemiesKilled;
+        document.getElementById('end-cleared').innerText = smogCleared;
 
         updateHallOfFame();
     }
 
     function updateHallOfFame() {
         let hof = JSON.parse(localStorage.getItem('samrattama_hof') || '[]');
-        // Score is based on enemies killed + surviving flowers
-        let finalScore = enemiesKilled + (activeFlowers * 2);
+        let finalScore = smogCleared + (activeFlowers * 2);
         
         hof.push({ name: userName, score: finalScore });
         hof.sort((a, b) => b.score - a.score);
@@ -454,7 +449,7 @@
         activeFlowers = flowers.length;
         document.getElementById('flower-count').innerText = activeFlowers;
         document.getElementById('lost').innerText = lostFlowers;
-        document.getElementById('smog-kill').innerText = enemiesKilled;
+        document.getElementById('smog-cleared').innerText = smogCleared;
         document.getElementById('hp-fill').style.width = player.health + "%";
         
         let targetPM = 35 + (clouds.length * 20);
@@ -480,8 +475,7 @@
     function spawnFlowerAt(x, y) {
         const colors = ['#e91e63', '#ffeb3b', '#ff5722', '#9c27b0'];
         flowers.push({
-            x: x,
-            y: y,
+            x: x, y: y,
             color: colors[Math.floor(Math.random()*colors.length)],
             growth: 0.1, active: true
         });
@@ -548,7 +542,7 @@
             clouds.forEach(c => { 
                 if(c.active) { 
                     c.active = false; 
-                    enemiesKilled++; 
+                    smogCleared++; 
                     spawnParticles(c.x, c.y, '#7f8c8d'); 
                 }
             });
@@ -564,12 +558,14 @@
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
         // Spawners
-        // Initial flowers are sparse, player must create them by killing cars
+        // Flowers spawn often to keep garden lush
+        if(frames % 120 === 0 && flowers.length < 15) spawnFlower();
         
         let cloudRate = Math.max(15, Math.floor(100 / difficultyFactor));
         if(frames % cloudRate === 0) spawnCloud();
         
-        let carRate = Math.max(30, Math.floor(180 / difficultyFactor));
+        // Cars are RARE (seldom)
+        let carRate = Math.max(100, Math.floor(600 / difficultyFactor)); 
         if(frames % carRate === 0) spawnCar(); 
         
         if(frames % 600 === 0) spawnWaterDrop();
@@ -735,18 +731,18 @@
              ctx.translate(x + w/2, y + h/2);
              if(!player.facingRight) ctx.scale(-1, 1);
              
-             // Swish effect
-             ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+             // Simple Swish (White Line Arc)
+             ctx.strokeStyle = '#fff';
+             ctx.lineWidth = 4;
              ctx.beginPath();
-             ctx.arc(20, 0, 40, -Math.PI/2, Math.PI/2);
-             ctx.fill();
+             ctx.arc(20, 0, 35, -Math.PI/3, Math.PI/3);
+             ctx.stroke();
 
              // Sword blade
              ctx.fillStyle = '#bdc3c7'; // Silver
              ctx.fillRect(15, -5, 30, 8);
              ctx.fillStyle = '#34495e'; // Handle
              ctx.fillRect(5, -5, 10, 8);
-             ctx.fillRect(15, -10, 5, 18); // Guard
 
              ctx.restore();
         } else {
