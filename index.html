@@ -50,10 +50,12 @@
         .stat-label { font-size: 12px; color: #bbb; text-transform: uppercase; }
         .stat-val { font-size: 24px; font-weight: bold;}
 
+        /* PM 2.5 Style */
         #pm25-box { align-items: flex-start; }
         #pm25-val { font-size: 28px; }
         .unit { font-size: 12px; color: #999; }
 
+        /* HEALTH BAR */
         #hp-container {
             width: 80px; height: 12px;
             background: #333; border: 2px solid #fff;
@@ -65,6 +67,7 @@
             transition: width 0.2s;
         }
 
+        /* CONTROLS */
         #controls-area {
             position: absolute; bottom: 40px; width: 100%; height: 180px;
             pointer-events: none;
@@ -84,6 +87,15 @@
             color: #2ecc71; font-weight: bold;
         }
         .pressed { background: rgba(46, 204, 113, 0.9) !important; color: white !important; transform: scale(0.95); }
+
+        /* CREDITS */
+        #credits {
+            position: absolute; bottom: 5px; width: 100%;
+            text-align: center; color: rgba(255,255,255,0.6);
+            font-size: 12px; font-family: sans-serif;
+            pointer-events: auto; z-index: 20;
+        }
+        #credits a { color: #f39c12; font-weight: bold; }
 
         /* SCREENS */
         #menu-screen, #game-over-screen {
@@ -221,88 +233,21 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // --- SYNTHESIZER (Web Audio API) ---
-    // This creates 8-bit sounds without needing files
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const actx = new AudioContext();
-
-    const sfx = {
-        collect: () => {
-            if(actx.state === 'suspended') actx.resume();
-            let o = actx.createOscillator();
-            let g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
-            
-            o.type = 'sine';
-            o.frequency.setValueAtTime(1200, actx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(2000, actx.currentTime + 0.1);
-            
-            g.gain.setValueAtTime(0.1, actx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.1);
-            
-            o.start(); o.stop(actx.currentTime + 0.1);
-        },
-        pop: () => {
-            if(actx.state === 'suspended') actx.resume();
-            let o = actx.createOscillator();
-            let g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
-            
-            o.type = 'square';
-            o.frequency.setValueAtTime(200, actx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(50, actx.currentTime + 0.1);
-            
-            g.gain.setValueAtTime(0.1, actx.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.1);
-            
-            o.start(); o.stop(actx.currentTime + 0.1);
-        },
-        hit: () => {
-            if(actx.state === 'suspended') actx.resume();
-            let o = actx.createOscillator();
-            let g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
-            
-            o.type = 'sawtooth';
-            o.frequency.setValueAtTime(100, actx.currentTime);
-            o.frequency.exponentialRampToValueAtTime(20, actx.currentTime + 0.2);
-            
-            g.gain.setValueAtTime(0.2, actx.currentTime);
-            g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.2);
-            
-            o.start(); o.stop(actx.currentTime + 0.2);
-        },
-        rain: () => { // Magical heal sound
-            if(actx.state === 'suspended') actx.resume();
-            let o = actx.createOscillator();
-            let g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
-            
-            o.type = 'sine';
-            o.frequency.setValueAtTime(400, actx.currentTime);
-            o.frequency.linearRampToValueAtTime(800, actx.currentTime + 0.3);
-            
-            g.gain.setValueAtTime(0.1, actx.currentTime);
-            g.gain.linearRampToValueAtTime(0, actx.currentTime + 0.5);
-            
-            o.start(); o.stop(actx.currentTime + 0.5);
-        },
-        over: () => {
-            if(actx.state === 'suspended') actx.resume();
-            let o = actx.createOscillator();
-            let g = actx.createGain();
-            o.connect(g); g.connect(actx.destination);
-            
-            o.type = 'triangle';
-            o.frequency.setValueAtTime(300, actx.currentTime);
-            o.frequency.linearRampToValueAtTime(50, actx.currentTime + 1.0);
-            
-            g.gain.setValueAtTime(0.3, actx.currentTime);
-            g.gain.linearRampToValueAtTime(0, actx.currentTime + 1.0);
-            
-            o.start(); o.stop(actx.currentTime + 1.0);
-        }
+    // --- Audio System ---
+    const sounds = {
+        collect: new Audio('sfx_collect.mp3'),
+        pop: new Audio('sfx_pop.mp3'),
+        hit: new Audio('sfx_hit.mp3'),
+        rain: new Audio('sfx_rain.mp3'),
+        over: new Audio('sfx_gameover.mp3')
     };
+
+    function playSfx(name) {
+        if(sounds[name]) {
+            sounds[name].currentTime = 0;
+            sounds[name].play().catch(e => console.log("Audio play failed (interact first):", e));
+        }
+    }
 
     // --- State & Config ---
     let width, height, groundY;
@@ -315,12 +260,17 @@
     let userName = "Hero";
     let score = 0;
     let lostFlowers = 0;
-    let smogKilled = 0; 
+    let smogKilled = 0; // New Stat
     let rainTimer = 0; 
     let pmLevel = 35;
 
     // Entities
-    let player = { x: 0, y: 0, w: 30, h: 50, speed: 5, facingRight: true, grabbing: false, health: 100, hurtCooldown: 0 };
+    let player = { 
+        x: 0, y: 0, w: 30, h: 50, 
+        speed: 5, facingRight: true, grabbing: false,
+        health: 100, hurtCooldown: 0 
+    };
+    
     let flowers = [];
     let clouds = [];
     let cars = [];
@@ -345,8 +295,6 @@
 
     // --- Inputs ---
     const handleStart = (x, y, id) => {
-        if(actx.state === 'suspended') actx.resume(); // Enable audio on touch
-        
         if(x < width/2) {
             joystick.active = true; joystick.startX = x; joystick.startY = y; joystick.touchId = id;
         } else {
@@ -418,7 +366,7 @@
             if(Math.hypot(ax - f.x, ay - f.y) < 40 && f.growth >= 1) {
                 f.active = false;
                 score++;
-                sfx.collect();
+                playSfx('collect');
                 acted = true;
                 updateHUD();
             }
@@ -431,8 +379,8 @@
                 if(Math.hypot(ax - c.x, ay - c.y) < c.size + 30) {
                     c.active = false;
                     acted = true;
-                    smogKilled++; 
-                    sfx.pop();
+                    smogKilled++; // Update Stat
+                    playSfx('pop');
                     spawnParticles(c.x, c.y, '#7f8c8d'); 
                     pmLevel = Math.max(35, pmLevel - 15);
                     updateHUD();
@@ -445,7 +393,7 @@
         rainTimer = 180;
         player.health = 100;
         pmLevel = 25;
-        sfx.rain();
+        playSfx('rain');
         
         clouds.forEach(c => {
             if(c.active) {
@@ -466,9 +414,7 @@
             return;
         }
         userName = input.value.trim();
-        actx.resume().then(() => {
-            startGame();
-        });
+        startGame();
     }
 
     function startGame() {
@@ -498,7 +444,7 @@
 
     function gameOver() {
         isPlaying = false;
-        sfx.over();
+        playSfx('over');
         document.getElementById('game-over-screen').classList.remove('hidden');
         
         // Update End Screen Stats
@@ -670,7 +616,7 @@
                 if(dist < 15) { 
                     target.active = false; 
                     lostFlowers++; 
-                    sfx.pop(); 
+                    playSfx('pop'); // Re-use pop sound for flower death
                     spawnParticles(target.x, target.y, '#7f8c8d'); // Grey Ash
                     updateHUD(); 
                 }
@@ -707,7 +653,7 @@
     function hurtPlayer(dmg) {
         player.health -= dmg;
         player.hurtCooldown = 60;
-        sfx.hit();
+        playSfx('hit');
         updateHUD();
         if(player.health <= 0) gameOver();
     }
