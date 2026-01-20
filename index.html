@@ -33,21 +33,27 @@
 
         .hud-bar {
             padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: flex-start;
             background: rgba(0,0,0,0.7);
             color: #f1c40f;
-            font-size: 22px;
+            font-size: 20px;
             text-shadow: 2px 2px #000;
             border-bottom: 2px solid #555;
         }
         
+        .stat-group { display: flex; gap: 20px; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
-        .stat-label { font-size: 14px; color: #bbb; }
-        .stat-val { font-size: 24px; }
+        .stat-label { font-size: 12px; color: #bbb; text-transform: uppercase; }
+        .stat-val { font-size: 24px; font-weight: bold;}
+
+        /* PM 2.5 Specific Style */
+        #pm25-box { align-items: flex-start; }
+        #pm25-val { font-size: 28px; }
+        .unit { font-size: 12px; color: #999; }
 
         /* HEALTH BAR */
         #hp-container {
-            width: 120px; height: 16px;
+            width: 100px; height: 12px;
             background: #333; border: 2px solid #fff;
             position: relative; margin-top: 5px;
         }
@@ -131,21 +137,32 @@
 
     <div id="ui-layer">
         <div class="hud-bar">
-            <div class="stat-box">
-                <span class="stat-label">SAVED</span>
-                <span class="stat-val" id="score">0</span>
+            <div class="stat-box" id="pm25-box">
+                <span class="stat-label">AIR QUALITY (PM 2.5)</span>
+                <div>
+                    <span class="stat-val" id="pm-val">35</span>
+                    <span class="unit">µg/m³</span>
+                </div>
             </div>
-            <div class="stat-box">
-                <span class="stat-label">LOST</span>
-                <span class="stat-val" id="lost" style="color:#e74c3c">0</span>
-            </div>
-            <div class="stat-box">
-                <span class="stat-label">HEALTH</span>
-                <div id="hp-container">
-                    <div id="hp-fill"></div>
+
+            <div class="stat-group">
+                <div class="stat-box">
+                    <span class="stat-label">SAVED</span>
+                    <span class="stat-val" id="score">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">LOST</span>
+                    <span class="stat-val" id="lost" style="color:#e74c3c">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">HEALTH</span>
+                    <div id="hp-container">
+                        <div id="hp-fill"></div>
+                    </div>
                 </div>
             </div>
         </div>
+
         <div id="controls-area">
             <div class="control-guide">MOVE<br>(Drag)</div>
             <div class="control-guide" id="grab-indicator">GRAB<br>ATTACK</div>
@@ -156,15 +173,15 @@
         <h1>SAMRATTAMA</h1>
         <h2>FLOWERS</h2>
         <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
-        <p>Watch out for cars!</p>
-        <p style="color:#2ecc71; font-size:14px;">💧 Grab Water Drops to Summon Rain!</p>
+        <p>Smog increases PM 2.5 levels!</p>
+        <p style="color:#2ecc71; font-size:14px;">💧 Water Drops clean the air</p>
         <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
         <button onclick="checkNameAndStart()">START GAME</button>
     </div>
 
     <div id="game-over-screen" class="hidden">
         <h1 style="color:#e74c3c">GAME OVER</h1>
-        <p>Smog destroyed the valley.</p>
+        <p>The air became too toxic.</p>
         <div id="hof-list"></div>
         <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
@@ -180,12 +197,14 @@
     let isPlaying = false;
     let animationId;
     let frames = 0;
+    let difficultyFactor = 1.0;
     
     // Player Data
     let userName = "Hero";
     let score = 0;
     let lostFlowers = 0;
-    let rainTimer = 0; // Duration of the rain effect
+    let rainTimer = 0; 
+    let pmLevel = 35; // Base level
 
     // Entities
     let player = { 
@@ -199,9 +218,9 @@
     let cars = [];
     let waterDrops = [];
     let particles = [];
-    let smokeParticles = []; // Background smoke
-    let exhaustParticles = []; // Car smoke
-    let rainParticles = []; // Powerup rain
+    let smokeParticles = [];
+    let exhaustParticles = [];
+    let rainParticles = [];
 
     // Inputs
     let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
@@ -217,7 +236,7 @@
     resize();
 
     // --- Inputs ---
-    const handleStart = (x, y, id, isRight) => {
+    const handleStart = (x, y, id) => {
         if(x < width/2) {
             joystick.active = true; joystick.startX = x; joystick.startY = y; joystick.touchId = id;
         } else {
@@ -230,7 +249,7 @@
         if(!isPlaying) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
             let t = e.changedTouches[i];
-            handleStart(t.clientX, t.clientY, t.identifier, t.clientX > width/2);
+            handleStart(t.clientX, t.clientY, t.identifier);
         }
     }, {passive: false});
 
@@ -258,7 +277,7 @@
         }
     });
 
-    canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY, 'mouse', e.clientX > width/2));
+    canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY, 'mouse'));
     canvas.addEventListener('mousemove', e => { if(joystick.active) { joystick.dx = e.clientX-joystick.startX; joystick.dy = e.clientY-joystick.startY; }});
     canvas.addEventListener('mouseup', () => { joystick.active = false; joystick.dx=0; joystick.dy=0; document.getElementById('grab-indicator').classList.remove('pressed'); player.grabbing=false; });
 
@@ -302,20 +321,23 @@
                     c.active = false;
                     acted = true;
                     spawnParticles(c.x, c.y, '#7f8c8d'); 
+                    // Lower PM slightly on kill
+                    pmLevel = Math.max(35, pmLevel - 15);
                 }
             });
         }
     }
 
     function activateRain() {
-        rainTimer = 180; // 3 seconds at 60fps
-        player.health = 100; // Restore Health
-        updateHUD();
-        // Immediately kill current clouds
+        rainTimer = 180;
+        player.health = 100;
+        pmLevel = 25; // Clean air!
+        
         clouds.forEach(c => {
             c.active = false;
             spawnParticles(c.x, c.y, '#7f8c8d');
         });
+        updateHUD();
     }
 
     // --- Game Logic ---
@@ -323,7 +345,7 @@
     function checkNameAndStart() {
         const input = document.getElementById('username');
         if(input.value.trim() === "") {
-            alert("Please enter a name / Введите имя");
+            alert("Please enter a name");
             return;
         }
         userName = input.value.trim();
@@ -340,6 +362,9 @@
         document.getElementById('game-over-screen').classList.add('hidden');
         
         score = 0; lostFlowers = 0; frames = 0; rainTimer = 0;
+        difficultyFactor = 1.0;
+        pmLevel = 35;
+
         player.health = 100; player.hurtCooldown = 0;
         player.x = width/2; player.y = groundY + 50;
         
@@ -376,6 +401,25 @@
         document.getElementById('score').innerText = score;
         document.getElementById('lost').innerText = lostFlowers;
         document.getElementById('hp-fill').style.width = player.health + "%";
+        
+        // Update PM 2.5
+        // Base is 35. Each cloud adds ~20. Rain reduces it.
+        let targetPM = 35 + (clouds.length * 20);
+        if(rainTimer > 0) targetPM = 25;
+        
+        // Smooth transition
+        pmLevel += (targetPM - pmLevel) * 0.1;
+        let displayPM = Math.floor(pmLevel);
+        
+        let pmEl = document.getElementById('pm-val');
+        pmEl.innerText = displayPM;
+        
+        // Color Coding
+        if(displayPM < 50) pmEl.style.color = "#2ecc71"; // Good (Green)
+        else if(displayPM < 100) pmEl.style.color = "#f1c40f"; // Moderate (Yellow)
+        else if(displayPM < 150) pmEl.style.color = "#e67e22"; // Unhealthy (Orange)
+        else if(displayPM < 250) pmEl.style.color = "#e74c3c"; // Very Unhealthy (Red)
+        else pmEl.style.color = "#8e44ad"; // Hazardous (Purple)
     }
 
     function spawnFlower() {
@@ -389,24 +433,24 @@
     }
 
     function spawnCloud() {
-        // Don't spawn clouds if raining
         if(rainTimer > 0) return;
         clouds.push({
             x: Math.random() * width, y: groundY - 150,
-            size: 25, speed: Math.random() * 1.5 + 0.5,
+            size: 25, 
+            speed: (Math.random() * 1.5 + 0.5) * difficultyFactor, // Faster with difficulty
             active: true
         });
     }
 
     function spawnCar() {
         let fromRight = Math.random() > 0.5;
-        // Random Y position on the ground
         let carY = Math.random() * (height - groundY - 60) + groundY + 10;
-        
+        let speed = (Math.random() > 0.5 ? 6 : 8) * difficultyFactor;
+
         cars.push({
             x: fromRight ? width + 60 : -60,
             y: carY,
-            vx: fromRight ? -7 : 7,
+            vx: fromRight ? -speed : speed,
             w: 50, h: 25,
             color: Math.random() > 0.5 ? '#e74c3c' : '#3498db'
         });
@@ -424,26 +468,25 @@
         frames++;
         if(player.hurtCooldown > 0) player.hurtCooldown--;
         
-        // Rain Logic
+        // --- Difficulty Ramp ---
+        // Increase difficulty every 600 frames (approx 10s)
+        if(frames % 600 === 0) {
+            difficultyFactor += 0.1; 
+        }
+
+        // --- Rain Logic ---
         if(rainTimer > 0) {
             rainTimer--;
-            // Spawn heavy rain
             for(let i=0; i<3; i++) {
                 rainParticles.push({
                     x: Math.random() * width, y: -20,
                     vx: 0, vy: 15, life: 60
                 });
             }
-            // Continuous Kill Clouds
-            clouds.forEach(c => {
-                 if(c.active) {
-                     c.active = false;
-                     spawnParticles(c.x, c.y, '#7f8c8d');
-                 }
-            });
+            clouds.forEach(c => { if(c.active) { c.active = false; spawnParticles(c.x, c.y, '#7f8c8d'); }});
         }
 
-        // Player Physics
+        // --- Player ---
         if(joystick.active) {
             player.x += Math.max(-player.speed, Math.min(player.speed, joystick.dx * 0.05));
             player.y += Math.max(-player.speed, Math.min(player.speed, joystick.dy * 0.05));
@@ -452,42 +495,45 @@
         player.x = Math.max(0, Math.min(width - player.w, player.x));
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Spawners
+        // --- Spawners (Affected by Difficulty) ---
         if(frames % 120 === 0 && flowers.length < 10) spawnFlower();
-        if(frames % 100 === 0) spawnCloud();
-        if(frames % 200 === 0) spawnCar(); 
-        if(frames % 600 === 0) spawnWaterDrop(); // Rare powerup
+        
+        // Clouds spawn faster as difficulty increases (min 40 frames)
+        let cloudRate = Math.max(40, Math.floor(100 / difficultyFactor));
+        if(frames % cloudRate === 0) spawnCloud();
+        
+        // Cars spawn faster (min 60 frames)
+        let carRate = Math.max(60, Math.floor(200 / difficultyFactor));
+        if(frames % carRate === 0) spawnCar(); 
+        
+        if(frames % 600 === 0) spawnWaterDrop();
 
-        // Entities Update
+        // --- Entities ---
         flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
 
-        // Cars Update
+        // Cars
         for(let i = cars.length -1; i >= 0; i--) {
             let c = cars[i];
             c.x += c.vx;
-            
-            // Exhaust Particles (Small Grey Pixels)
+            // Exhaust
             if(frames % 5 === 0) {
                 exhaustParticles.push({
-                    x: c.vx > 0 ? c.x : c.x + c.w, // Emit from back
+                    x: c.vx > 0 ? c.x : c.x + c.w,
                     y: c.y + c.h - 5,
-                    vx: 0, vy: -0.5,
-                    life: 40
+                    vx: 0, vy: -0.5, life: 40
                 });
             }
-
-            // Collision with Player
+            // Hit
             if(player.hurtCooldown === 0 &&
                player.x < c.x + c.w && player.x + player.w > c.x &&
                player.y < c.y + c.h && player.y + player.h > c.y) {
                 hurtPlayer(30);
                 spawnParticles(player.x, player.y, '#e74c3c');
             }
-
             if(c.x < -100 || c.x > width + 100) cars.splice(i, 1);
         }
 
-        // Clouds Update
+        // Clouds
         clouds.forEach(c => {
             if(!c.active) return;
             let target = flowers.find(f => f.active && f.growth > 0.5);
@@ -499,7 +545,6 @@
             } else {
                 c.y += Math.sin(frames*0.05)*0.5; c.x += Math.cos(frames*0.05)*0.5;
             }
-
             if(player.hurtCooldown === 0) {
                 let pDist = Math.hypot((player.x+player.w/2)-c.x, (player.y+player.h/2)-c.y);
                 if(pDist < c.size + 15) {
@@ -509,23 +554,25 @@
             }
         });
 
-        // Background Smoke
+        // Background
         if(frames % 4 === 0) {
             smokeParticles.push({
-                x: width * 0.9 + 15 + (Math.random()-0.5)*10,
-                y: groundY - 140,
+                x: width * 0.9 + 15 + (Math.random()-0.5)*10, y: groundY - 140,
                 vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1.5 - 0.5,
                 life: 80, size: Math.random()*6+4
             });
         }
 
-        // Array Cleanup
+        // Cleanup
         flowers = flowers.filter(f => f.active);
         clouds = clouds.filter(c => c.active);
         particles = particles.filter(p => p.life > 0);
         smokeParticles = smokeParticles.filter(p => p.life > 0);
         exhaustParticles = exhaustParticles.filter(p => p.life > 0);
         rainParticles = rainParticles.filter(p => p.y < height);
+
+        // Update HUD for PM values
+        updateHUD();
     }
 
     function hurtPlayer(dmg) {
@@ -550,7 +597,6 @@
         ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, width, height);
         drawBackground();
 
-        // Flowers
         flowers.forEach(f => {
             let h = f.growth * 40, r = f.growth * 8;
             ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h);
@@ -564,39 +610,27 @@
             }
         });
 
-        // Water Drops
         ctx.fillStyle = '#3498db';
         waterDrops.forEach(w => {
             let yOffset = Math.sin((frames + w.floatOffset) * 0.05) * 5;
             let cx = w.x, cy = w.y + yOffset;
-            // Draw Teardrop
-            ctx.beginPath();
-            ctx.arc(cx, cy, 10, 0, Math.PI, false); // Bottom arc
-            ctx.lineTo(cx, cy - 15); // Top point
-            ctx.fill();
-            // Shine
-            ctx.fillStyle = 'white';
-            ctx.fillRect(cx - 3, cy - 3, 2, 2);
-            ctx.fillStyle = '#3498db';
+            ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI, false); ctx.lineTo(cx, cy - 15); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.fillRect(cx - 3, cy - 3, 2, 2); ctx.fillStyle = '#3498db';
         });
 
-        // Cars
         cars.forEach(c => {
             ctx.fillStyle = c.color; ctx.fillRect(c.x, c.y, c.w, c.h);
             ctx.fillStyle = '#ecf0f1'; ctx.fillRect(c.x + 5, c.y - 10, c.w - 10, 10);
             ctx.fillStyle = '#000'; ctx.fillRect(c.x + 5, c.y + c.h - 5, 10, 10); ctx.fillRect(c.x + c.w - 15, c.y + c.h - 5, 10, 10);
         });
 
-        // Exhaust Particles
         ctx.fillStyle = '#7f8c8d';
         exhaustParticles.forEach(p => {
-             ctx.fillRect(p.x, p.y, 4, 4);
-             p.x += p.vx; p.y += p.vy; p.life--;
+             ctx.fillRect(p.x, p.y, 4, 4); p.x += p.vx; p.y += p.vy; p.life--;
         });
 
         drawPlayer();
 
-        // Clouds
         clouds.forEach(c => {
             ctx.fillStyle = '#bdc3c7';
             ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
@@ -604,63 +638,41 @@
             ctx.arc(c.x+c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5);
-            ctx.fillRect(c.x-6, c.y+10, 12, 3);
+            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5); ctx.fillRect(c.x-6, c.y+10, 12, 3);
         });
 
-        // Effect Particles
         particles.forEach(p => {
-            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
-            p.x += p.vx; p.y += p.vy; p.life--;
+            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); p.x += p.vx; p.y += p.vy; p.life--;
         });
 
-        // Rain Particles
         ctx.fillStyle = '#3498db';
         rainParticles.forEach(p => {
-            ctx.fillRect(p.x, p.y, 2, 10); // Long drop
-            p.y += p.vy;
+            ctx.fillRect(p.x, p.y, 2, 10); p.y += p.vy;
         });
     }
 
     function drawPlayer() {
         if(player.hurtCooldown > 0 && frames%4 < 2) return;
         let x = player.x, y = player.y, w = player.w, h = player.h;
-        
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y+h-5, w, 5);
         ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h);
         ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4);
         ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15);
         ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10);
-        
         if(player.grabbing) {
-            ctx.fillStyle = '#D2B48C';
-            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8);
+            ctx.fillStyle = '#D2B48C'; ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8);
         }
     }
 
     function drawBackground() {
-        // Landscape
         ctx.fillStyle = '#34495e'; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width*0.2, groundY-150); ctx.lineTo(width*0.5, groundY-80); ctx.lineTo(width*0.8, groundY-180); ctx.lineTo(width, groundY-100); ctx.lineTo(width, groundY); ctx.fill();
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, groundY, width, height-groundY);
         
-        // Landmarks
-        let hX = width*0.75;
-        ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200);
-        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
-
-        // Kok Tobe
-        let hillX = width * 0.2; 
-        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); ctx.fill();
-        let towerX = hillX - 20; 
-        ctx.fillStyle = '#7f8c8d'; ctx.fillRect(towerX - 4, groundY - 250, 8, 180); ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill();
-
-        // Power Plant
-        let pX = width*0.9;
-        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
-        smokeParticles.forEach(p => {
-             ctx.fillStyle = '#7f8c8d'; ctx.fillRect(p.x, p.y, p.size, p.size);
-             p.x += p.vx; p.y += p.vy; p.life--;
-        });
+        let hX = width*0.75; ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200); ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
+        let hillX = width * 0.2; ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); ctx.fill();
+        let towerX = hillX - 20; ctx.fillStyle = '#7f8c8d'; ctx.fillRect(towerX - 4, groundY - 250, 8, 180); ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill();
+        let pX = width*0.9; ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
+        smokeParticles.forEach(p => { ctx.fillStyle = '#7f8c8d'; ctx.fillRect(p.x, p.y, p.size, p.size); p.x += p.vx; p.y += p.vy; p.life--; });
     }
 
     function gameLoop() {
@@ -670,7 +682,6 @@
         animationId = requestAnimationFrame(gameLoop);
     }
     
-    // Initial render
     drawBackground();
     drawPlayer();
 
