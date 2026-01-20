@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Samrat vs Smog</title>
+    <title>Samrat vs Smog: Retaliation</title>
     <style>
-        /* Import a retro font */
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
         body {
@@ -13,7 +12,7 @@
             overflow: hidden;
             background-color: #2c3e50;
             font-family: 'VT323', monospace;
-            touch-action: none; /* Prevents zooming/scrolling on mobile */
+            touch-action: none;
             user-select: none;
         }
 
@@ -21,7 +20,7 @@
             display: block;
             width: 100%;
             height: 100%;
-            image-rendering: pixelated; /* Keeps pixel art crisp */
+            image-rendering: pixelated;
         }
 
         #ui-layer {
@@ -40,14 +39,15 @@
             padding: 10px 20px;
             display: flex;
             justify-content: space-between;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.6);
             color: #f1c40f;
             font-size: 24px;
             text-shadow: 2px 2px #000;
-            border-bottom: 2px solid #fff;
+            border-bottom: 3px solid #333;
         }
+        
+        .health-stat { color: #e74c3c; }
 
-        /* Controls Overlay */
         #controls-area {
             position: absolute;
             bottom: 20px;
@@ -64,33 +64,31 @@
         .control-guide {
             width: 120px;
             height: 120px;
-            border: 2px dashed rgba(255,255,255,0.4);
+            border: 3px dashed rgba(255,255,255,0.4);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            color: rgba(255,255,255,0.6);
+            color: rgba(255,255,255,0.7);
             font-size: 18px;
-            background: rgba(0,0,0,0.2);
-            pointer-events: none; /* Touches pass through to canvas */
+            background: rgba(0,0,0,0.3);
         }
 
         #grab-indicator {
-            border: 2px solid #2ecc71;
-            background: rgba(46, 204, 113, 0.2);
+            border: 3px solid #2ecc71;
+            background: rgba(46, 204, 113, 0.3);
             color: #2ecc71;
             font-weight: bold;
         }
 
         .pressed {
-            background: rgba(46, 204, 113, 0.8) !important;
+            background: rgba(46, 204, 113, 0.9) !important;
             color: white !important;
-            transform: scale(0.9);
+            transform: scale(0.95);
         }
 
-        /* Start / Game Over Screens */
-        #menu-screen {
+        #menu-screen, #game-over-screen {
             position: absolute;
             top: 0;
             left: 0;
@@ -107,59 +105,46 @@
         }
 
         h1 { 
-            font-size: 40px; 
-            color: #f39c12; 
-            text-shadow: 4px 4px #c0392b; 
-            margin: 0 0 20px 0;
-            text-align: center;
-            line-height: 1;
+            font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; 
+            margin: 0 0 10px 0; text-align: center; line-height: 1;
         }
-
-        p { font-size: 20px; color: #bdc3c7; max-width: 80%; text-align: center; }
+        p { font-size: 20px; color: #bdc3c7; max-width: 80%; text-align: center; margin: 10px 0; }
 
         button {
-            background: #e74c3c;
-            border: none;
-            border-bottom: 6px solid #c0392b;
-            color: white;
-            font-family: 'VT323', monospace;
-            font-size: 28px;
-            padding: 15px 40px;
-            cursor: pointer;
-            margin-top: 20px;
-            border-radius: 8px;
+            background: #e74c3c; border: none; border-bottom: 6px solid #c0392b;
+            color: white; font-family: 'VT323', monospace; font-size: 28px;
+            padding: 15px 40px; cursor: pointer; margin-top: 20px; border-radius: 8px;
         }
-        button:active {
-            transform: translateY(4px);
-            border-bottom: 2px solid #c0392b;
-        }
+        button:active { transform: translateY(4px); border-bottom: 2px solid #c0392b; }
         
         .hidden { display: none !important; }
-
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
         <div class="hud-bar">
-            <span>FLOWER: <span id="score">0</span></span>
-            <span>SMOG LEVEL: <span id="smog">LOW</span></span>
+            <span>🌺 SCORE: <span id="score">0</span></span>
+            <span class="health-stat">❤ HEALTH: <span id="health">100</span>%</span>
         </div>
-
         <div id="controls-area">
             <div class="control-guide">MOVE<br>(Left Side)</div>
-            <div class="control-guide" id="grab-indicator">GRAB<br>(Tap Here)</div>
+            <div class="control-guide" id="grab-indicator">GRAB / ATTACK<br>(Tap Here)</div>
         </div>
     </div>
 
     <div id="menu-screen">
         <h1>SAMRATTAMA<br>FLOWERS</h1>
-        <p>Save Almaty's flowers from the smog!</p>
-        <p style="font-size: 16px; color: #f1c40f;">
-            👈 Left Thumb: Move<br>
-            👉 Right Thumb: Grab Flowers
-        </p>
+        <p>Collect flowers. Destroy clouds.</p>
+        <p style="color:#f1c40f">👉 Right Thumb attacks clouds!</p>
         <button onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <h1>GAME OVER</h1>
+        <p>The smog overwhelmed you.</p>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button onclick="resetGame()">TRY AGAIN</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -168,61 +153,43 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // --- Config ---
-    let width, height;
-    let groundY; // Horizon line
-    
-    // --- Game State ---
+    let width, height, groundY;
     let isPlaying = false;
     let score = 0;
     let frames = 0;
 
     // --- Entities ---
     let player = { 
-        x: 0, y: 0, 
-        w: 30, h: 50, // Bigger character
-        vx: 0, vy: 0, 
-        speed: 5,
-        facingRight: true,
-        grabbing: false
+        x: 0, y: 0, w: 30, h: 50, 
+        speed: 5, facingRight: true, grabbing: false,
+        health: 100, hurtCooldown: 0
     };
 
     let flowers = [];
     let clouds = [];
     let particles = [];
+    let smokeParticles = []; // Dedicated array for background smoke
 
-    // --- Inputs ---
     let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
     
-    // --- Setup ---
+    // --- Setup & Inputs ---
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        groundY = height * 0.55; // Ground starts at 55% down the screen
-        
-        if(!isPlaying) {
-            player.x = width / 2;
-            player.y = groundY + 50;
-        }
+        groundY = height * 0.55;
+        if(!isPlaying) { player.x = width / 2; player.y = groundY + 50; }
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // --- Input Logic (Touch) ---
     canvas.addEventListener('touchstart', e => {
         e.preventDefault();
+        if(!isPlaying) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
             let t = e.changedTouches[i];
-            
-            // Left Side: Move
             if (t.clientX < width / 2) {
-                joystick.active = true;
-                joystick.startX = t.clientX;
-                joystick.startY = t.clientY;
-                joystick.touchId = t.identifier;
-            } 
-            // Right Side: Grab
-            else {
+                joystick.active = true; joystick.startX = t.clientX; joystick.startY = t.clientY; joystick.touchId = t.identifier;
+            } else {
                 doGrabAction();
             }
         }
@@ -230,11 +197,11 @@
 
     canvas.addEventListener('touchmove', e => {
         e.preventDefault();
+        if(!isPlaying) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
             let t = e.changedTouches[i];
             if (joystick.active && t.identifier === joystick.touchId) {
-                joystick.dx = t.clientX - joystick.startX;
-                joystick.dy = t.clientY - joystick.startY;
+                joystick.dx = t.clientX - joystick.startX; joystick.dy = t.clientY - joystick.startY;
             }
         }
     }, {passive: false});
@@ -244,65 +211,65 @@
         for (let i = 0; i < e.changedTouches.length; i++) {
             let t = e.changedTouches[i];
             if (t.identifier === joystick.touchId) {
-                joystick.active = false;
-                joystick.dx = 0;
-                joystick.dy = 0;
+                joystick.active = false; joystick.dx = 0; joystick.dy = 0;
             } else {
-                // Right side release
                 document.getElementById('grab-indicator').classList.remove('pressed');
                 player.grabbing = false;
             }
         }
     });
 
-    // Mouse support for testing on PC
+    // PC testing controls
     canvas.addEventListener('mousedown', e => {
-        if(e.clientX < width/2) {
-            joystick.active = true;
-            joystick.startX = e.clientX;
-            joystick.startY = e.clientY;
-        } else {
-            doGrabAction();
-        }
+        if(e.clientX > width/2) doGrabAction();
+        else { joystick.active = true; joystick.startX = e.clientX; joystick.startY = e.clientY; }
     });
     canvas.addEventListener('mousemove', e => {
-        if(joystick.active) {
-            joystick.dx = e.clientX - joystick.startX;
-            joystick.dy = e.clientY - joystick.startY;
-        }
+         if(joystick.active) { joystick.dx = e.clientX - joystick.startX; joystick.dy = e.clientY - joystick.startY; }
     });
     canvas.addEventListener('mouseup', () => {
-        joystick.active = false;
-        joystick.dx = 0;
-        joystick.dy = 0;
-        document.getElementById('grab-indicator').classList.remove('pressed');
-        player.grabbing = false;
+        joystick.active = false; joystick.dx=0; joystick.dy=0; 
+        document.getElementById('grab-indicator').classList.remove('pressed'); player.grabbing = false;
     });
 
+
+    // --- Action Logic (Grab/Attack) ---
     function doGrabAction() {
         if(!isPlaying) return;
-        
         document.getElementById('grab-indicator').classList.add('pressed');
         player.grabbing = true;
         
-        // Check collision with flowers
-        flowers.forEach((f, index) => {
-            if(!f.active) return;
-            // Simple distance check
-            let dist = Math.hypot((player.x + player.w/2) - f.x, (player.y + player.h) - f.y);
-            
-            if(dist < 50 && f.growth >= 16) {
-                // Collect flower
+        let actionX = player.x + (player.facingRight ? player.w : -20);
+        let actionY = player.y + 10;
+        let hitSomething = false;
+
+        // 1. Try to gather flowers first
+        flowers.forEach(f => {
+            if(!f.active || hitSomething) return;
+            let dist = Math.hypot(actionX - f.x, actionY - f.y);
+            if(dist < 40 && f.growth >= 1) {
                 f.active = false;
                 score++;
-                document.getElementById('score').innerText = score;
-                spawnParticles(f.x, f.y, f.color);
+                updateHUD();
+                hitSomething = true; // One action per tap
             }
         });
+
+        // 2. If no flower gathered, try to attack clouds
+        if(!hitSomething) {
+            clouds.forEach(c => {
+                if(!c.active || hitSomething) return;
+                let dist = Math.hypot(actionX - c.x, actionY - c.y);
+                if(dist < c.size + 20) {
+                    c.active = false;
+                    spawnParticles(c.x, c.y, '#7f8c8d'); // Grey pixel shards
+                    hitSomething = true;
+                }
+            });
+        }
     }
 
     // --- Game Logic ---
-    
     function startGame() {
         document.getElementById('menu-screen').classList.add('hidden');
         resetGame();
@@ -311,277 +278,226 @@
     }
 
     function resetGame() {
-        score = 0;
-        frames = 0;
-        player.x = width / 2;
-        player.y = groundY + 50;
-        flowers = [];
-        clouds = [];
-        particles = [];
-        document.getElementById('score').innerText = "0";
+        document.getElementById('game-over-screen').classList.add('hidden');
+        score = 0; frames = 0;
+        player.health = 100; player.hurtCooldown = 0;
+        player.x = width / 2; player.y = groundY + 50;
+        flowers = []; clouds = []; particles = []; smokeParticles = [];
+        updateHUD();
+        for(let i=0; i<3; i++) spawnFlower();
+    }
 
-        // Spawn initial batch
-        for(let i=0; i<5; i++) spawnFlower();
+    function gameOver() {
+        isPlaying = false;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+    }
+
+    function updateHUD() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('health').innerText = player.health;
     }
 
     function spawnFlower() {
-        const colors = ['#e74c3c', '#f1c40f', '#9b59b6', '#2ecc71', '#3498db'];
+        const colors = ['#FF69B4', '#FFD700', '#FF4500', '#DA70D6'];
         flowers.push({
-            x: Math.random() * (width - 40) + 20,
-            y: Math.random() * (height - groundY - 60) + groundY + 30,
+            x: Math.random() * (width - 60) + 30,
+            y: Math.random() * (height - groundY - 80) + groundY + 40,
             color: colors[Math.floor(Math.random() * colors.length)],
-            growth: 0, // 0 to 25 pixels
-            active: true
+            growth: 0.1, active: true // Growth 0.1 to 1.0
         });
     }
 
     function spawnCloud() {
         clouds.push({
             x: Math.random() * width,
-            y: groundY - 150, // In the sky
-            size: 30,
-            speed: Math.random() * 2 + 1
+            y: groundY - 150, 
+            size: 25, // Smaller size
+            speed: Math.random() * 1.5 + 0.5,
+            active: true
         });
     }
 
     function update() {
         frames++;
+        if(player.hurtCooldown > 0) player.hurtCooldown--;
 
-        // 1. Move Player
+        // Player Move
         if(joystick.active) {
-            const speed = player.speed;
-            const moveX = joystick.dx * 0.05; // Sensitivity
-            const moveY = joystick.dy * 0.05;
-
-            player.x += Math.max(-speed, Math.min(speed, moveX));
-            player.y += Math.max(-speed, Math.min(speed, moveY));
-
-            if(moveX > 0) player.facingRight = true;
-            if(moveX < 0) player.facingRight = false;
+            player.x += Math.max(-player.speed, Math.min(player.speed, joystick.dx * 0.05));
+            player.y += Math.max(-player.speed, Math.min(player.speed, joystick.dy * 0.05));
+            player.facingRight = joystick.dx >= 0;
         }
+        player.x = Math.max(0, Math.min(width - player.w, player.x));
+        player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Keep player in bounds
-        if(player.x < 0) player.x = 0;
-        if(player.x > width - player.w) player.x = width - player.w;
-        if(player.y < groundY) player.y = groundY; // Don't walk in sky
-        if(player.y > height - player.h) player.y = height - player.h;
+        // Flowers Grow
+        if(frames % 5 === 0 && flowers.length < 8) spawnFlower();
+        flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.02; });
 
-        // 2. Flowers Grow (Pixel by pixel effect)
-        if(frames % 5 === 0 && flowers.length < 10) spawnFlower();
-        
-        flowers.forEach(f => {
-            if(f.active && f.growth < 25 && frames % 2 === 0) {
-                f.growth++;
-            }
-        });
-
-        // 3. Clouds (Smog)
-        if(frames % 120 === 0) spawnCloud();
-        
+        // Clouds Update
+        if(frames % 100 === 0) spawnCloud();
         clouds.forEach(c => {
-            // Clouds chase flowers
-            let target = flowers.find(f => f.active);
+            if(!c.active) return;
+            // Chase logic
+            let target = flowers.find(f => f.active && f.growth > 0.5);
             if(target) {
-                let dx = target.x - c.x;
-                let dy = target.y - c.y;
+                let dx = target.x - c.x, dy = target.y - c.y;
                 let dist = Math.hypot(dx, dy);
-                c.x += (dx/dist) * c.speed;
-                c.y += (dy/dist) * c.speed;
-
-                // Eat flower
-                if(dist < 20) {
-                    target.active = false;
-                    c.size += 5; // Smog grows
-                }
+                c.x += (dx/dist) * c.speed; c.y += (dy/dist) * c.speed;
+                if(dist < 20) target.active = false; // Eat flower
             } else {
-                c.y += Math.sin(frames * 0.1);
+                c.y += Math.sin(frames * 0.05) * 0.5; // Idle float
+                c.x += Math.cos(frames * 0.05) * 0.5;
+            }
+
+            // Damage Player
+            if(player.hurtCooldown === 0) {
+                let distToPlayer = Math.hypot((player.x+player.w/2) - c.x, (player.y+player.h/2) - c.y);
+                if(distToPlayer < c.size + 15) {
+                    player.health -= 20;
+                    player.hurtCooldown = 60; // 1 second invulnerability
+                    spawnParticles(player.x + player.w/2, player.y + player.h/2, '#e74c3c'); // Red hurt particles
+                    updateHUD();
+                    if(player.health <= 0) gameOver();
+                }
             }
         });
+
+        // Background Smoke update
+        if(frames % 5 === 0) {
+            smokeParticles.push({
+                x: width * 0.9 + 15 + (Math.random()-0.5)*10,
+                y: groundY - 140,
+                vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1 - 0.5,
+                life: 100, size: Math.random()*6+4
+            });
+        }
 
         // Cleanup
         flowers = flowers.filter(f => f.active);
+        clouds = clouds.filter(c => c.active);
+        particles = particles.filter(p => p.life > 0);
+        smokeParticles = smokeParticles.filter(p => p.life > 0);
     }
 
     function spawnParticles(x, y, color) {
-        for(let i=0; i<10; i++) {
+        for(let i=0; i<12; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random()-0.5)*8,
-                vy: (Math.random()-0.5)*8,
-                color: color,
-                life: 30
+                vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
+                color: color, life: 20, size: Math.random()*5+2
             });
         }
     }
 
     // --- Drawing ---
-
     function draw() {
-        // Clear screen
-        ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(0, 0, width, height);
-
-        // 1. Draw Almaty Background
+        ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, width, height);
         drawBackground();
 
-        // 2. Draw Flowers (Pixel Style)
+        // Draw Flowers (Actual shape now)
         flowers.forEach(f => {
+            let height = f.growth * 40;
+            let radius = f.growth * 8;
+            // Stem (Dark Green)
+            ctx.fillStyle = '#006400';
+            ctx.fillRect(f.x-2, f.y - height, 4, height);
+            // Petals
             ctx.fillStyle = f.color;
-            // Draw a 5x5 grid of "pixels" based on growth
-            let size = 4;
-            let startX = f.x - 10;
-            let startY = f.y - 10;
-            
-            for(let i=0; i<f.growth; i++) {
-                // Random-ish fill pattern based on index
-                let px = (i * 7) % 5;
-                let py = Math.floor(i / 5);
-                ctx.fillRect(startX + px*size, startY + py*size, size, size);
+            if(f.growth > 0.2) {
+                ctx.beginPath();
+                // Draw 5 petals cluster
+                for(let i=0; i<5; i++) {
+                    let angle = (i * Math.PI * 2) / 5;
+                    ctx.arc(f.x + Math.cos(angle)*radius, (f.y - height) + Math.sin(angle)*radius, radius*0.8, 0, Math.PI*2);
+                }
+                ctx.fill();
+                // Center
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath(); ctx.arc(f.x, f.y - height, radius*0.5, 0, Math.PI*2); ctx.fill();
             }
         });
 
-        // 3. Draw Player
         drawPlayer();
 
-        // 4. Draw Smog
+        // Draw Clouds (Hand-drawn style)
         clouds.forEach(c => {
-            ctx.fillStyle = 'rgba(127, 140, 141, 0.9)';
+            ctx.fillStyle = '#bdc3c7';
             ctx.beginPath();
-            ctx.arc(c.x, c.y, c.size, 0, Math.PI*2);
+            // Puffy shape using 3 overlapping circles
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+            ctx.arc(c.x - c.size*0.6, c.y + c.size*0.2, c.size*0.7, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size*0.6, c.y + c.size*0.2, c.size*0.7, 0, Math.PI * 2);
             ctx.fill();
             
             // Angry Face
-            ctx.fillStyle = 'black';
-            ctx.fillRect(c.x - 10, c.y - 5, 6, 6); // Left Eye
-            ctx.fillRect(c.x + 4, c.y - 5, 6, 6); // Right Eye
-            
-            // Eyebrows
-            ctx.beginPath();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = 'black';
-            ctx.moveTo(c.x - 15, c.y - 12);
-            ctx.lineTo(c.x - 2, c.y - 6);
-            ctx.moveTo(c.x + 15, c.y - 12);
-            ctx.lineTo(c.x + 2, c.y - 6);
-            ctx.stroke();
-
-            // Mouth
-            ctx.fillRect(c.x - 10, c.y + 10, 20, 4);
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(c.x - 8, c.y - 2, 6, 4); // Eyes
+            ctx.fillRect(c.x + 2, c.y - 2, 6, 4);
+            ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = '#2c3e50'; // Brows
+            ctx.moveTo(c.x-10, c.y-6); ctx.lineTo(c.x-2, c.y-2);
+            ctx.moveTo(c.x+10, c.y-6); ctx.lineTo(c.x+2, c.y-2); ctx.stroke();
+            ctx.fillRect(c.x - 6, c.y + 8, 12, 3); // Mouth
         });
 
-        // 5. Particles
-        particles.forEach((p, i) => {
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, 4, 4);
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life--;
-            if(p.life <= 0) particles.splice(i, 1);
+        // Particles (Shards)
+        particles.forEach(p => {
+            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
+            p.x += p.vx; p.y += p.vy; p.life--;
         });
     }
 
     function drawPlayer() {
-        const x = player.x;
-        const y = player.y;
-        const w = player.w;
-        const h = player.h;
-
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(x, y+h-5, w, 5);
-
-        // Body (Coat)
-        ctx.fillStyle = '#D2B48C'; // Light Brown
-        ctx.fillRect(x, y, w, h);
-
-        // Buttons
-        ctx.fillStyle = '#5D4037';
-        ctx.fillRect(x + w/2 - 2, y + 15, 4, 4);
-        ctx.fillRect(x + w/2 - 2, y + 25, 4, 4);
-
-        // Head
-        ctx.fillStyle = '#ffcc99'; // Skin
-        ctx.fillRect(x + 2, y - 15, w - 4, 15);
-
-        // Hat
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(x - 5, y - 15, w + 10, 6); // Brim
-        ctx.fillRect(x, y - 25, w, 10); // Top
+        let x = player.x, y = player.y, w = player.w, h = player.h;
+        if(player.hurtCooldown > 0 &&frames % 4 < 2) return; // Flicker when hurt
+        
+        // Shadow & Body
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y+h-5, w, 5);
+        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h); // Coat
+        ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4); // Buttons
+        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15); // Head
+        ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10); // Hat
 
         // Grab Arm
         if(player.grabbing) {
             ctx.fillStyle = '#D2B48C';
-            if(player.facingRight) ctx.fillRect(x + w - 5, y + 10, 15, 8);
-            else ctx.fillRect(x - 10, y + 10, 15, 8);
+            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8);
         }
     }
 
     function drawBackground() {
-        // Mountains
-        ctx.fillStyle = '#34495e'; // Dark mountain
-        ctx.beginPath();
-        ctx.moveTo(0, groundY);
-        ctx.lineTo(width * 0.2, groundY - 150);
-        ctx.lineTo(width * 0.5, groundY - 80);
-        ctx.lineTo(width * 0.8, groundY - 180);
-        ctx.lineTo(width, groundY - 100);
-        ctx.lineTo(width, groundY);
-        ctx.fill();
+        // Mountains & Ground
+        ctx.fillStyle = '#34495e'; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width*0.2, groundY-150); ctx.lineTo(width*0.5, groundY-80); ctx.lineTo(width*0.8, groundY-180); ctx.lineTo(width, groundY-100); ctx.lineTo(width, groundY); ctx.fill();
+        ctx.fillStyle = '#27ae60'; ctx.fillRect(0, groundY, width, height-groundY);
 
-        // Hotel Kazakhstan (Tall building with crown)
-        let hX = width * 0.75;
-        let hY = groundY - 200;
-        ctx.fillStyle = '#95a5a6'; // Concrete color
-        ctx.fillRect(hX, hY, 50, 200);
-        // Crown
-        ctx.fillStyle = '#f1c40f'; // Gold
-        ctx.beginPath();
-        ctx.moveTo(hX, hY);
-        ctx.lineTo(hX+10, hY-15);
-        ctx.lineTo(hX+25, hY-5);
-        ctx.lineTo(hX+40, hY-15);
-        ctx.lineTo(hX+50, hY);
-        ctx.fill();
-
-        // TV Tower (Left side hill)
-        let tX = width * 0.2;
-        ctx.fillStyle = '#27ae60'; // Hill
-        ctx.beginPath();
-        ctx.arc(tX, groundY, 80, Math.PI, 0);
-        ctx.fill();
-        // Tower Stick
-        ctx.fillStyle = '#c0392b';
-        ctx.fillRect(tX - 4, groundY - 250, 8, 180);
-        // Tower Ball
-        ctx.beginPath();
-        ctx.arc(tX, groundY - 180, 15, 0, Math.PI*2);
-        ctx.fill();
-
-        // Power Plant (Right side)
-        let pX = width * 0.9;
-        ctx.fillStyle = '#555';
-        ctx.fillRect(pX, groundY - 120, 30, 120);
-        // Smoke
-        ctx.fillStyle = 'rgba(200,200,200,0.5)';
-        ctx.beginPath();
-        ctx.arc(pX + 15, groundY - 140 - (frames%50), 10 + (frames%50)/3, 0, Math.PI*2);
-        ctx.fill();
-
-        // Grass Floor
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(0, groundY, width, height - groundY);
+        // Buildings
+        let hX = width*0.75, hY = groundY-200;
+        ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, hY, 50, 200); // Hotel
+        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, hY); ctx.lineTo(hX+10, hY-15); ctx.lineTo(hX+25, hY-5); ctx.lineTo(hX+40, hY-15); ctx.lineTo(hX+50, hY); ctx.fill(); // Crown
+        let tX = width*0.2; ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(tX, groundY, 80, Math.PI, 0); ctx.fill(); // Hill
+        ctx.fillStyle = '#c0392b'; ctx.fillRect(tX-4, groundY-250, 8, 180); ctx.beginPath(); ctx.arc(tX, groundY-180, 15, 0, Math.PI*2); ctx.fill(); // Tower
+        
+        // Power Plant & Pixel Smoke
+        let pX = width*0.9;
+        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120); // Plant
+        smokeParticles.forEach(p => {
+             ctx.fillStyle = '#7f8c8d'; // Grey pixel smoke
+             ctx.fillRect(p.x, p.y, p.size, p.size);
+             p.x += p.vx; p.y += p.vy; p.life--;
+        });
     }
 
-    // Main Loop
     function gameLoop() {
+        if(!isPlaying) return;
         update();
         draw();
-        if(isPlaying) requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop);
     }
 
-    // Initial Draw (Background only)
+    // Initial Draw
     drawBackground();
-
+    drawPlayer();
 </script>
 </body>
 </html>
