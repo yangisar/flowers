@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Samrat vs Smog: Almaty Drift</title>
+    <title>SAMRATTAMA FLOWERS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -86,7 +86,8 @@
             color: white; pointer-events: auto; padding: 20px; box-sizing: border-box;
         }
 
-        h1 { font-size: 36px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 10px 0; text-align: center; line-height: 1; }
+        h1 { font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 10px 0; text-align: center; line-height: 1; }
+        h2 { font-size: 30px; color: #2ecc71; margin: 0 0 20px 0; text-shadow: 2px 2px #000; }
         p { font-size: 18px; color: #bdc3c7; text-align: center; margin: 5px 0; max-width: 400px; }
         
         .rus-text {
@@ -153,8 +154,10 @@
 
     <div id="menu-screen">
         <h1>SAMRATTAMA</h1>
+        <h2>FLOWERS</h2>
         <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
         <p>Watch out for cars!</p>
+        <p style="color:#2ecc71; font-size:14px;">💧 Grab Water Drops to Summon Rain!</p>
         <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
         <button onclick="checkNameAndStart()">START GAME</button>
     </div>
@@ -175,13 +178,14 @@
     // --- State & Config ---
     let width, height, groundY;
     let isPlaying = false;
-    let animationId; // To track and cancel loop
+    let animationId;
     let frames = 0;
     
     // Player Data
     let userName = "Hero";
     let score = 0;
     let lostFlowers = 0;
+    let rainTimer = 0; // Duration of the rain effect
 
     // Entities
     let player = { 
@@ -193,8 +197,11 @@
     let flowers = [];
     let clouds = [];
     let cars = [];
+    let waterDrops = [];
     let particles = [];
-    let smokeParticles = [];
+    let smokeParticles = []; // Background smoke
+    let exhaustParticles = []; // Car smoke
+    let rainParticles = []; // Powerup rain
 
     // Inputs
     let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
@@ -266,7 +273,17 @@
         let ay = player.y + 10;
         let acted = false;
 
-        // Gather Flower
+        // 1. Grab Water Drop
+        waterDrops.forEach((w, idx) => {
+            if(acted) return;
+            if(Math.hypot(ax - w.x, ay - w.y) < 40) {
+                activateRain();
+                waterDrops.splice(idx, 1);
+                acted = true;
+            }
+        });
+
+        // 2. Gather Flower
         flowers.forEach(f => {
             if(!f.active || acted) return;
             if(Math.hypot(ax - f.x, ay - f.y) < 40 && f.growth >= 1) {
@@ -277,7 +294,7 @@
             }
         });
 
-        // Destroy Cloud
+        // 3. Destroy Cloud
         if(!acted) {
             clouds.forEach(c => {
                 if(!c.active || acted) return;
@@ -288,6 +305,17 @@
                 }
             });
         }
+    }
+
+    function activateRain() {
+        rainTimer = 180; // 3 seconds at 60fps
+        player.health = 100; // Restore Health
+        updateHUD();
+        // Immediately kill current clouds
+        clouds.forEach(c => {
+            c.active = false;
+            spawnParticles(c.x, c.y, '#7f8c8d');
+        });
     }
 
     // --- Game Logic ---
@@ -308,25 +336,18 @@
     }
 
     function resetGame() {
-        // Stop existing loop if running
         if(animationId) cancelAnimationFrame(animationId);
-        
         document.getElementById('game-over-screen').classList.add('hidden');
         
-        // Reset Stats
-        score = 0; lostFlowers = 0; frames = 0;
+        score = 0; lostFlowers = 0; frames = 0; rainTimer = 0;
         player.health = 100; player.hurtCooldown = 0;
         player.x = width/2; player.y = groundY + 50;
         
-        // Clear Arrays
-        flowers = []; clouds = []; particles = []; smokeParticles = []; cars = [];
+        flowers = []; clouds = []; cars = []; waterDrops = [];
+        particles = []; smokeParticles = []; exhaustParticles = []; rainParticles = [];
         
         updateHUD();
-        
-        // Initial Spawns
         for(let i=0; i<3; i++) spawnFlower();
-        
-        // Start Loop
         isPlaying = true;
         gameLoop();
     }
@@ -347,12 +368,7 @@
         const list = document.getElementById('hof-list');
         list.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; border-bottom:1px solid #777;">HALL OF FAME</h3>`;
         hof.forEach((entry, idx) => {
-            list.innerHTML += `
-                <div class="hof-item">
-                    <span>${idx+1}. ${entry.name}</span>
-                    <span>${entry.score}</span>
-                </div>
-            `;
+            list.innerHTML += `<div class="hof-item"><span>${idx+1}. ${entry.name}</span><span>${entry.score}</span></div>`;
         });
     }
 
@@ -373,6 +389,8 @@
     }
 
     function spawnCloud() {
+        // Don't spawn clouds if raining
+        if(rainTimer > 0) return;
         clouds.push({
             x: Math.random() * width, y: groundY - 150,
             size: 25, speed: Math.random() * 1.5 + 0.5,
@@ -382,18 +400,48 @@
 
     function spawnCar() {
         let fromRight = Math.random() > 0.5;
+        // Random Y position on the ground
+        let carY = Math.random() * (height - groundY - 60) + groundY + 10;
+        
         cars.push({
             x: fromRight ? width + 60 : -60,
-            y: groundY + 10, // Driving on the grass/road
+            y: carY,
             vx: fromRight ? -7 : 7,
             w: 50, h: 25,
             color: Math.random() > 0.5 ? '#e74c3c' : '#3498db'
         });
     }
 
+    function spawnWaterDrop() {
+        waterDrops.push({
+            x: Math.random() * (width - 60) + 30,
+            y: Math.random() * (height - groundY - 60) + groundY + 30,
+            floatOffset: Math.random() * 100
+        });
+    }
+
     function update() {
         frames++;
         if(player.hurtCooldown > 0) player.hurtCooldown--;
+        
+        // Rain Logic
+        if(rainTimer > 0) {
+            rainTimer--;
+            // Spawn heavy rain
+            for(let i=0; i<3; i++) {
+                rainParticles.push({
+                    x: Math.random() * width, y: -20,
+                    vx: 0, vy: 15, life: 60
+                });
+            }
+            // Continuous Kill Clouds
+            clouds.forEach(c => {
+                 if(c.active) {
+                     c.active = false;
+                     spawnParticles(c.x, c.y, '#7f8c8d');
+                 }
+            });
+        }
 
         // Player Physics
         if(joystick.active) {
@@ -407,16 +455,27 @@
         // Spawners
         if(frames % 120 === 0 && flowers.length < 10) spawnFlower();
         if(frames % 100 === 0) spawnCloud();
-        if(frames % 300 === 0) spawnCar(); // Car every 5 sec approx
+        if(frames % 200 === 0) spawnCar(); 
+        if(frames % 600 === 0) spawnWaterDrop(); // Rare powerup
 
         // Entities Update
         flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
 
-        // Cars
+        // Cars Update
         for(let i = cars.length -1; i >= 0; i--) {
             let c = cars[i];
             c.x += c.vx;
             
+            // Exhaust Particles (Small Grey Pixels)
+            if(frames % 5 === 0) {
+                exhaustParticles.push({
+                    x: c.vx > 0 ? c.x : c.x + c.w, // Emit from back
+                    y: c.y + c.h - 5,
+                    vx: 0, vy: -0.5,
+                    life: 40
+                });
+            }
+
             // Collision with Player
             if(player.hurtCooldown === 0 &&
                player.x < c.x + c.w && player.x + player.w > c.x &&
@@ -425,11 +484,10 @@
                 spawnParticles(player.x, player.y, '#e74c3c');
             }
 
-            // Despawn
             if(c.x < -100 || c.x > width + 100) cars.splice(i, 1);
         }
 
-        // Clouds
+        // Clouds Update
         clouds.forEach(c => {
             if(!c.active) return;
             let target = flowers.find(f => f.active && f.growth > 0.5);
@@ -451,7 +509,7 @@
             }
         });
 
-        // Smoke
+        // Background Smoke
         if(frames % 4 === 0) {
             smokeParticles.push({
                 x: width * 0.9 + 15 + (Math.random()-0.5)*10,
@@ -461,10 +519,13 @@
             });
         }
 
+        // Array Cleanup
         flowers = flowers.filter(f => f.active);
         clouds = clouds.filter(c => c.active);
         particles = particles.filter(p => p.life > 0);
         smokeParticles = smokeParticles.filter(p => p.life > 0);
+        exhaustParticles = exhaustParticles.filter(p => p.life > 0);
+        rainParticles = rainParticles.filter(p => p.y < height);
     }
 
     function hurtPlayer(dmg) {
@@ -503,18 +564,34 @@
             }
         });
 
+        // Water Drops
+        ctx.fillStyle = '#3498db';
+        waterDrops.forEach(w => {
+            let yOffset = Math.sin((frames + w.floatOffset) * 0.05) * 5;
+            let cx = w.x, cy = w.y + yOffset;
+            // Draw Teardrop
+            ctx.beginPath();
+            ctx.arc(cx, cy, 10, 0, Math.PI, false); // Bottom arc
+            ctx.lineTo(cx, cy - 15); // Top point
+            ctx.fill();
+            // Shine
+            ctx.fillStyle = 'white';
+            ctx.fillRect(cx - 3, cy - 3, 2, 2);
+            ctx.fillStyle = '#3498db';
+        });
+
         // Cars
         cars.forEach(c => {
-            // Body
-            ctx.fillStyle = c.color;
-            ctx.fillRect(c.x, c.y, c.w, c.h);
-            // Cabin
-            ctx.fillStyle = '#ecf0f1';
-            ctx.fillRect(c.x + 5, c.y - 10, c.w - 10, 10);
-            // Wheels
-            ctx.fillStyle = '#000';
-            ctx.fillRect(c.x + 5, c.y + c.h - 5, 10, 10);
-            ctx.fillRect(c.x + c.w - 15, c.y + c.h - 5, 10, 10);
+            ctx.fillStyle = c.color; ctx.fillRect(c.x, c.y, c.w, c.h);
+            ctx.fillStyle = '#ecf0f1'; ctx.fillRect(c.x + 5, c.y - 10, c.w - 10, 10);
+            ctx.fillStyle = '#000'; ctx.fillRect(c.x + 5, c.y + c.h - 5, 10, 10); ctx.fillRect(c.x + c.w - 15, c.y + c.h - 5, 10, 10);
+        });
+
+        // Exhaust Particles
+        ctx.fillStyle = '#7f8c8d';
+        exhaustParticles.forEach(p => {
+             ctx.fillRect(p.x, p.y, 4, 4);
+             p.x += p.vx; p.y += p.vy; p.life--;
         });
 
         drawPlayer();
@@ -531,11 +608,17 @@
             ctx.fillRect(c.x-6, c.y+10, 12, 3);
         });
 
-        // Particles
+        // Effect Particles
         particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
+            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
             p.x += p.vx; p.y += p.vy; p.life--;
+        });
+
+        // Rain Particles
+        ctx.fillStyle = '#3498db';
+        rainParticles.forEach(p => {
+            ctx.fillRect(p.x, p.y, 2, 10); // Long drop
+            p.y += p.vy;
         });
     }
 
@@ -565,25 +648,17 @@
         ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200);
         ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
 
-        // Kok Tobe Hill (Curved)
+        // Kok Tobe
         let hillX = width * 0.2; 
-        ctx.fillStyle = '#2ecc71'; 
-        ctx.beginPath(); 
-        ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); // Ellipse for curvature
-        ctx.fill();
-
-        // TV Tower (Left of hill center, grey)
+        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); ctx.fill();
         let towerX = hillX - 20; 
-        ctx.fillStyle = '#7f8c8d'; // Grey
-        ctx.fillRect(towerX - 4, groundY - 250, 8, 180); // Stick
-        ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill(); // Ball
+        ctx.fillStyle = '#7f8c8d'; ctx.fillRect(towerX - 4, groundY - 250, 8, 180); ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill();
 
         // Power Plant
         let pX = width*0.9;
         ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
         smokeParticles.forEach(p => {
-             ctx.fillStyle = '#7f8c8d'; 
-             ctx.fillRect(p.x, p.y, p.size, p.size);
+             ctx.fillStyle = '#7f8c8d'; ctx.fillRect(p.x, p.y, p.size, p.size);
              p.x += p.vx; p.y += p.vy; p.life--;
         });
     }
