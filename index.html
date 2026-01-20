@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Samrat vs Smog: Retaliation</title>
+    <title>Samrat vs Smog: Hall of Fame</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
@@ -23,100 +23,96 @@
             image-rendering: pixelated;
         }
 
+        /* UI LAYOUT */
         #ui-layer {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            display: flex; flex-direction: column; justify-content: space-between;
         }
 
         .hud-bar {
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            background: rgba(0,0,0,0.6);
+            padding: 10px 15px;
+            display: flex; justify-content: space-between;
+            background: rgba(0,0,0,0.7);
             color: #f1c40f;
-            font-size: 24px;
+            font-size: 22px;
             text-shadow: 2px 2px #000;
-            border-bottom: 3px solid #333;
+            border-bottom: 2px solid #555;
         }
         
-        .health-stat { color: #e74c3c; }
+        .stat-box { display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 14px; color: #bbb; }
+        .stat-val { font-size: 24px; }
 
+        /* CONTROLS */
         #controls-area {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            height: 180px;
+            position: absolute; bottom: 20px; width: 100%; height: 180px;
             pointer-events: none;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 30px;
-            box-sizing: border-box;
-            align-items: flex-end;
+            display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; align-items: flex-end;
         }
 
         .control-guide {
-            width: 120px;
-            height: 120px;
-            border: 3px dashed rgba(255,255,255,0.4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: rgba(255,255,255,0.7);
-            font-size: 18px;
-            background: rgba(0,0,0,0.3);
+            width: 100px; height: 100px;
+            border: 3px dashed rgba(255,255,255,0.3); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: rgba(255,255,255,0.5); font-size: 16px;
+            background: rgba(0,0,0,0.2);
         }
 
         #grab-indicator {
-            border: 3px solid #2ecc71;
-            background: rgba(46, 204, 113, 0.3);
-            color: #2ecc71;
-            font-weight: bold;
+            border: 3px solid #2ecc71; background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71; font-weight: bold;
         }
+        .pressed { background: rgba(46, 204, 113, 0.9) !important; color: white !important; transform: scale(0.95); }
 
-        .pressed {
-            background: rgba(46, 204, 113, 0.9) !important;
-            color: white !important;
-            transform: scale(0.95);
-        }
-
+        /* SCREENS */
         #menu-screen, #game-over-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(30, 30, 30, 0.95);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            pointer-events: auto;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(30, 30, 30, 0.98); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; pointer-events: auto; padding: 20px; box-sizing: border-box;
         }
 
-        h1 { 
-            font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; 
-            margin: 0 0 10px 0; text-align: center; line-height: 1;
+        h1 { font-size: 36px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 10px 0; text-align: center; line-height: 1; }
+        p { font-size: 18px; color: #bdc3c7; text-align: center; margin: 5px 0; max-width: 400px; }
+        
+        .rus-text {
+            color: #3498db;
+            font-family: monospace; /* Better Cyrillic support */
+            font-size: 16px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 4px;
         }
-        p { font-size: 20px; color: #bdc3c7; max-width: 80%; text-align: center; margin: 10px 0; }
+
+        /* INPUT & BUTTONS */
+        input {
+            padding: 10px; font-size: 20px; font-family: 'VT323', monospace;
+            text-align: center; border: 3px solid #f39c12; background: #222; color: #fff;
+            margin-top: 15px; width: 80%; max-width: 300px; text-transform: uppercase;
+        }
 
         button {
             background: #e74c3c; border: none; border-bottom: 6px solid #c0392b;
-            color: white; font-family: 'VT323', monospace; font-size: 28px;
-            padding: 15px 40px; cursor: pointer; margin-top: 20px; border-radius: 8px;
+            color: white; font-family: 'VT323', monospace; font-size: 24px;
+            padding: 12px 30px; cursor: pointer; margin-top: 20px; border-radius: 8px;
         }
         button:active { transform: translateY(4px); border-bottom: 2px solid #c0392b; }
-        
+
+        /* LEADERBOARD */
+        #hof-list {
+            margin-top: 20px; width: 100%; max-width: 300px;
+            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
+        }
+        .hof-item {
+            display: flex; justify-content: space-between;
+            border-bottom: 1px dashed #555; padding: 5px 0; font-size: 20px;
+        }
+        .hof-item:first-child { color: #f1c40f; } /* Gold for #1 */
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -124,27 +120,41 @@
 
     <div id="ui-layer">
         <div class="hud-bar">
-            <span>🌺 SCORE: <span id="score">0</span></span>
-            <span class="health-stat">❤ HEALTH: <span id="health">100</span>%</span>
+            <div class="stat-box">
+                <span class="stat-label">SAVED</span>
+                <span class="stat-val" id="score">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">LOST</span>
+                <span class="stat-val" id="lost" style="color:#e74c3c">0</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">HEALTH</span>
+                <span class="stat-val" id="health">100</span>
+            </div>
         </div>
         <div id="controls-area">
-            <div class="control-guide">MOVE<br>(Left Side)</div>
-            <div class="control-guide" id="grab-indicator">GRAB / ATTACK<br>(Tap Here)</div>
+            <div class="control-guide">MOVE<br>(Drag)</div>
+            <div class="control-guide" id="grab-indicator">GRAB<br>ATTACK</div>
         </div>
     </div>
 
     <div id="menu-screen">
-        <h1>SAMRATTAMA<br>FLOWERS</h1>
-        <p>Collect flowers. Destroy clouds.</p>
-        <p style="color:#f1c40f">👉 Right Thumb attacks clouds!</p>
-        <button onclick="startGame()">START GAME</button>
+        <h1>SAMRATTAMA</h1>
+        <p class="rus-text">Помоги Самрату спасти как можно больше цветов от Смога</p>
+        
+        <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
+        <button onclick="checkNameAndStart()">START GAME</button>
     </div>
 
     <div id="game-over-screen" class="hidden">
-        <h1>GAME OVER</h1>
-        <p>The smog overwhelmed you.</p>
-        <p>Final Score: <span id="final-score">0</span></p>
-        <button onclick="resetGame()">TRY AGAIN</button>
+        <h1 style="color:#e74c3c">GAME OVER</h1>
+        <p>Smog destroyed the valley.</p>
+        
+        <div id="hof-list">
+            </div>
+
+        <button onclick="resetGame()">PLAY AGAIN</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -153,45 +163,56 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    // --- State & Config ---
     let width, height, groundY;
     let isPlaying = false;
-    let score = 0;
     let frames = 0;
+    
+    // Player Data
+    let userName = "Hero";
+    let score = 0;
+    let lostFlowers = 0;
 
-    // --- Entities ---
+    // Entities
     let player = { 
         x: 0, y: 0, w: 30, h: 50, 
         speed: 5, facingRight: true, grabbing: false,
-        health: 100, hurtCooldown: 0
+        health: 100, hurtCooldown: 0 
     };
-
+    
     let flowers = [];
     let clouds = [];
     let particles = [];
-    let smokeParticles = []; // Dedicated array for background smoke
+    let smokeParticles = [];
 
+    // Inputs
     let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
-    
-    // --- Setup & Inputs ---
+
+    // --- Setup ---
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
         groundY = height * 0.55;
-        if(!isPlaying) { player.x = width / 2; player.y = groundY + 50; }
+        if(!isPlaying) { player.x = width/2; player.y = groundY + 50; }
     }
     window.addEventListener('resize', resize);
     resize();
+
+    // --- Inputs (Touch & Mouse) ---
+    const handleStart = (x, y, id, isRight) => {
+        if(x < width/2) {
+            joystick.active = true; joystick.startX = x; joystick.startY = y; joystick.touchId = id;
+        } else {
+            doAction();
+        }
+    };
 
     canvas.addEventListener('touchstart', e => {
         e.preventDefault();
         if(!isPlaying) return;
         for (let i = 0; i < e.changedTouches.length; i++) {
             let t = e.changedTouches[i];
-            if (t.clientX < width / 2) {
-                joystick.active = true; joystick.startX = t.clientX; joystick.startY = t.clientY; joystick.touchId = t.identifier;
-            } else {
-                doGrabAction();
-            }
+            handleStart(t.clientX, t.clientY, t.identifier, t.clientX > width/2);
         }
     }, {passive: false});
 
@@ -219,57 +240,60 @@
         }
     });
 
-    // PC testing controls
-    canvas.addEventListener('mousedown', e => {
-        if(e.clientX > width/2) doGrabAction();
-        else { joystick.active = true; joystick.startX = e.clientX; joystick.startY = e.clientY; }
-    });
-    canvas.addEventListener('mousemove', e => {
-         if(joystick.active) { joystick.dx = e.clientX - joystick.startX; joystick.dy = e.clientY - joystick.startY; }
-    });
-    canvas.addEventListener('mouseup', () => {
-        joystick.active = false; joystick.dx=0; joystick.dy=0; 
-        document.getElementById('grab-indicator').classList.remove('pressed'); player.grabbing = false;
-    });
+    // Mouse for PC
+    canvas.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY, 'mouse', e.clientX > width/2));
+    canvas.addEventListener('mousemove', e => { if(joystick.active) { joystick.dx = e.clientX-joystick.startX; joystick.dy = e.clientY-joystick.startY; }});
+    canvas.addEventListener('mouseup', () => { joystick.active = false; joystick.dx=0; joystick.dy=0; document.getElementById('grab-indicator').classList.remove('pressed'); player.grabbing=false; });
 
 
-    // --- Action Logic (Grab/Attack) ---
-    function doGrabAction() {
+    // --- Core Action: Grab Flower OR Destroy Cloud ---
+    function doAction() {
         if(!isPlaying) return;
         document.getElementById('grab-indicator').classList.add('pressed');
         player.grabbing = true;
-        
-        let actionX = player.x + (player.facingRight ? player.w : -20);
-        let actionY = player.y + 10;
-        let hitSomething = false;
 
-        // 1. Try to gather flowers first
+        let ax = player.x + (player.facingRight ? player.w : -20);
+        let ay = player.y + 10;
+        let acted = false;
+
+        // 1. Gather Flower
         flowers.forEach(f => {
-            if(!f.active || hitSomething) return;
-            let dist = Math.hypot(actionX - f.x, actionY - f.y);
-            if(dist < 40 && f.growth >= 1) {
+            if(!f.active || acted) return;
+            if(Math.hypot(ax - f.x, ay - f.y) < 40 && f.growth >= 1) {
                 f.active = false;
                 score++;
+                acted = true;
                 updateHUD();
-                hitSomething = true; // One action per tap
+                // Clean gather (no particles)
             }
         });
 
-        // 2. If no flower gathered, try to attack clouds
-        if(!hitSomething) {
+        // 2. Destroy Cloud (if no flower gathered)
+        if(!acted) {
             clouds.forEach(c => {
-                if(!c.active || hitSomething) return;
-                let dist = Math.hypot(actionX - c.x, actionY - c.y);
-                if(dist < c.size + 20) {
+                if(!c.active || acted) return;
+                if(Math.hypot(ax - c.x, ay - c.y) < c.size + 30) {
                     c.active = false;
-                    spawnParticles(c.x, c.y, '#7f8c8d'); // Grey pixel shards
-                    hitSomething = true;
+                    acted = true;
+                    // GREY PIXEL EXPLOSION
+                    spawnParticles(c.x, c.y, '#7f8c8d'); 
                 }
             });
         }
     }
 
     // --- Game Logic ---
+
+    function checkNameAndStart() {
+        const input = document.getElementById('username');
+        if(input.value.trim() === "") {
+            alert("Please enter a name / Введите имя");
+            return;
+        }
+        userName = input.value.trim();
+        startGame();
+    }
+
     function startGame() {
         document.getElementById('menu-screen').classList.add('hidden');
         resetGame();
@@ -279,9 +303,9 @@
 
     function resetGame() {
         document.getElementById('game-over-screen').classList.add('hidden');
-        score = 0; frames = 0;
+        score = 0; lostFlowers = 0; frames = 0;
         player.health = 100; player.hurtCooldown = 0;
-        player.x = width / 2; player.y = groundY + 50;
+        player.x = width/2; player.y = groundY + 50;
         flowers = []; clouds = []; particles = []; smokeParticles = [];
         updateHUD();
         for(let i=0; i<3; i++) spawnFlower();
@@ -290,30 +314,58 @@
     function gameOver() {
         isPlaying = false;
         document.getElementById('game-over-screen').classList.remove('hidden');
-        document.getElementById('final-score').innerText = score;
+        updateHallOfFame();
+    }
+
+    function updateHallOfFame() {
+        // 1. Get existing HOF
+        let hof = JSON.parse(localStorage.getItem('samrattama_hof') || '[]');
+        
+        // 2. Add current run
+        hof.push({ name: userName, score: score });
+        
+        // 3. Sort Descending
+        hof.sort((a, b) => b.score - a.score);
+        
+        // 4. Keep top 5
+        hof = hof.slice(0, 5);
+        
+        // 5. Save
+        localStorage.setItem('samrattama_hof', JSON.stringify(hof));
+        
+        // 6. Render
+        const list = document.getElementById('hof-list');
+        list.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; border-bottom:1px solid #777;">HALL OF FAME</h3>`;
+        hof.forEach((entry, idx) => {
+            list.innerHTML += `
+                <div class="hof-item">
+                    <span>${idx+1}. ${entry.name}</span>
+                    <span>${entry.score}</span>
+                </div>
+            `;
+        });
     }
 
     function updateHUD() {
         document.getElementById('score').innerText = score;
-        document.getElementById('health').innerText = player.health;
+        document.getElementById('lost').innerText = lostFlowers;
+        document.getElementById('health').innerText = player.health + "%";
     }
 
     function spawnFlower() {
-        const colors = ['#FF69B4', '#FFD700', '#FF4500', '#DA70D6'];
+        const colors = ['#e91e63', '#ffeb3b', '#ff5722', '#9c27b0'];
         flowers.push({
             x: Math.random() * (width - 60) + 30,
             y: Math.random() * (height - groundY - 80) + groundY + 40,
-            color: colors[Math.floor(Math.random() * colors.length)],
-            growth: 0.1, active: true // Growth 0.1 to 1.0
+            color: colors[Math.floor(Math.random()*colors.length)],
+            growth: 0.1, active: true
         });
     }
 
     function spawnCloud() {
         clouds.push({
-            x: Math.random() * width,
-            y: groundY - 150, 
-            size: 25, // Smaller size
-            speed: Math.random() * 1.5 + 0.5,
+            x: Math.random() * width, y: groundY - 150,
+            size: 25, speed: Math.random() * 1.5 + 0.5,
             active: true
         });
     }
@@ -322,7 +374,7 @@
         frames++;
         if(player.hurtCooldown > 0) player.hurtCooldown--;
 
-        // Player Move
+        // Player Physics
         if(joystick.active) {
             player.x += Math.max(-player.speed, Math.min(player.speed, joystick.dx * 0.05));
             player.y += Math.max(-player.speed, Math.min(player.speed, joystick.dy * 0.05));
@@ -331,50 +383,62 @@
         player.x = Math.max(0, Math.min(width - player.w, player.x));
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Flowers Grow
-        if(frames % 5 === 0 && flowers.length < 8) spawnFlower();
-        flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.02; });
-
-        // Clouds Update
+        // Spawn Logic
+        if(frames % 120 === 0 && flowers.length < 10) spawnFlower();
         if(frames % 100 === 0) spawnCloud();
+
+        // Update Flowers
+        flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
+
+        // Update Clouds
         clouds.forEach(c => {
             if(!c.active) return;
-            // Chase logic
+            
+            // AI: Target Flowers
             let target = flowers.find(f => f.active && f.growth > 0.5);
             if(target) {
                 let dx = target.x - c.x, dy = target.y - c.y;
                 let dist = Math.hypot(dx, dy);
-                c.x += (dx/dist) * c.speed; c.y += (dy/dist) * c.speed;
-                if(dist < 20) target.active = false; // Eat flower
+                c.x += (dx/dist) * c.speed;
+                c.y += (dy/dist) * c.speed;
+                
+                // Eat Flower
+                if(dist < 15) {
+                    target.active = false;
+                    lostFlowers++;
+                    updateHUD();
+                }
             } else {
-                c.y += Math.sin(frames * 0.05) * 0.5; // Idle float
-                c.x += Math.cos(frames * 0.05) * 0.5;
+                // Drift
+                c.y += Math.sin(frames*0.05)*0.5;
+                c.x += Math.cos(frames*0.05)*0.5;
             }
 
             // Damage Player
             if(player.hurtCooldown === 0) {
-                let distToPlayer = Math.hypot((player.x+player.w/2) - c.x, (player.y+player.h/2) - c.y);
-                if(distToPlayer < c.size + 15) {
-                    player.health -= 20;
-                    player.hurtCooldown = 60; // 1 second invulnerability
-                    spawnParticles(player.x + player.w/2, player.y + player.h/2, '#e74c3c'); // Red hurt particles
+                let pDist = Math.hypot((player.x+player.w/2)-c.x, (player.y+player.h/2)-c.y);
+                if(pDist < c.size + 15) {
+                    player.health -= 25;
+                    player.hurtCooldown = 60;
+                    // Red blood pixels
+                    spawnParticles(player.x, player.y, '#e74c3c'); 
                     updateHUD();
                     if(player.health <= 0) gameOver();
                 }
             }
         });
 
-        // Background Smoke update
-        if(frames % 5 === 0) {
+        // Background Smoke
+        if(frames % 4 === 0) {
             smokeParticles.push({
                 x: width * 0.9 + 15 + (Math.random()-0.5)*10,
                 y: groundY - 140,
-                vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1 - 0.5,
-                life: 100, size: Math.random()*6+4
+                vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1.5 - 0.5,
+                life: 80, size: Math.random()*6+4
             });
         }
 
-        // Cleanup
+        // Filter inactive
         flowers = flowers.filter(f => f.active);
         clouds = clouds.filter(c => c.active);
         particles = particles.filter(p => p.life > 0);
@@ -382,107 +446,93 @@
     }
 
     function spawnParticles(x, y, color) {
-        for(let i=0; i<12; i++) {
+        for(let i=0; i<15; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
-                color: color, life: 20, size: Math.random()*5+2
+                vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
+                color: color, life: 25, size: 5 // 5px blocks
             });
         }
     }
 
-    // --- Drawing ---
+    // --- Draw ---
     function draw() {
         ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, width, height);
         drawBackground();
 
-        // Draw Flowers (Actual shape now)
+        // Flowers
         flowers.forEach(f => {
-            let height = f.growth * 40;
-            let radius = f.growth * 8;
-            // Stem (Dark Green)
-            ctx.fillStyle = '#006400';
-            ctx.fillRect(f.x-2, f.y - height, 4, height);
-            // Petals
-            ctx.fillStyle = f.color;
+            let h = f.growth * 40, r = f.growth * 8;
+            ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h); // Stem
             if(f.growth > 0.2) {
-                ctx.beginPath();
-                // Draw 5 petals cluster
+                ctx.fillStyle = f.color;
                 for(let i=0; i<5; i++) {
-                    let angle = (i * Math.PI * 2) / 5;
-                    ctx.arc(f.x + Math.cos(angle)*radius, (f.y - height) + Math.sin(angle)*radius, radius*0.8, 0, Math.PI*2);
+                    let a = (i*Math.PI*2)/5;
+                    ctx.beginPath(); ctx.arc(f.x + Math.cos(a)*r, (f.y-h) + Math.sin(a)*r, r*0.8, 0, Math.PI*2); ctx.fill();
                 }
-                ctx.fill();
-                // Center
-                ctx.fillStyle = '#FFD700';
-                ctx.beginPath(); ctx.arc(f.x, f.y - height, radius*0.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ffe'; ctx.beginPath(); ctx.arc(f.x, f.y-h, r*0.5, 0, Math.PI*2); ctx.fill();
             }
         });
 
         drawPlayer();
 
-        // Draw Clouds (Hand-drawn style)
+        // Clouds (Smog)
         clouds.forEach(c => {
             ctx.fillStyle = '#bdc3c7';
-            ctx.beginPath();
-            // Puffy shape using 3 overlapping circles
-            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
-            ctx.arc(c.x - c.size*0.6, c.y + c.size*0.2, c.size*0.7, 0, Math.PI * 2);
-            ctx.arc(c.x + c.size*0.6, c.y + c.size*0.2, c.size*0.7, 0, Math.PI * 2);
+            ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
+            ctx.arc(c.x-c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
+            ctx.arc(c.x+c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
             ctx.fill();
-            
-            // Angry Face
+            // Face
             ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(c.x - 8, c.y - 2, 6, 4); // Eyes
-            ctx.fillRect(c.x + 2, c.y - 2, 6, 4);
-            ctx.beginPath(); ctx.lineWidth = 2; ctx.strokeStyle = '#2c3e50'; // Brows
-            ctx.moveTo(c.x-10, c.y-6); ctx.lineTo(c.x-2, c.y-2);
-            ctx.moveTo(c.x+10, c.y-6); ctx.lineTo(c.x+2, c.y-2); ctx.stroke();
-            ctx.fillRect(c.x - 6, c.y + 8, 12, 3); // Mouth
+            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5);
+            ctx.fillRect(c.x-6, c.y+10, 12, 3);
         });
 
-        // Particles (Shards)
+        // Particles (Pixels)
         particles.forEach(p => {
-            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size); // SQUARE PIXELS
             p.x += p.vx; p.y += p.vy; p.life--;
         });
     }
 
     function drawPlayer() {
+        if(player.hurtCooldown > 0 && frames%4 < 2) return;
         let x = player.x, y = player.y, w = player.w, h = player.h;
-        if(player.hurtCooldown > 0 &&frames % 4 < 2) return; // Flicker when hurt
         
-        // Shadow & Body
         ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y+h-5, w, 5);
-        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h); // Coat
-        ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4); // Buttons
-        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15); // Head
+        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h); // Body
+        ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4);
+        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15); // Face
         ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10); // Hat
-
-        // Grab Arm
+        
         if(player.grabbing) {
             ctx.fillStyle = '#D2B48C';
-            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8);
+            ctx.fillRect(player.facingRight ? x+w-5 : x-10, y+15, 20, 8); // Arm
         }
     }
 
     function drawBackground() {
-        // Mountains & Ground
+        // Landscape
         ctx.fillStyle = '#34495e'; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width*0.2, groundY-150); ctx.lineTo(width*0.5, groundY-80); ctx.lineTo(width*0.8, groundY-180); ctx.lineTo(width, groundY-100); ctx.lineTo(width, groundY); ctx.fill();
         ctx.fillStyle = '#27ae60'; ctx.fillRect(0, groundY, width, height-groundY);
-
-        // Buildings
-        let hX = width*0.75, hY = groundY-200;
-        ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, hY, 50, 200); // Hotel
-        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, hY); ctx.lineTo(hX+10, hY-15); ctx.lineTo(hX+25, hY-5); ctx.lineTo(hX+40, hY-15); ctx.lineTo(hX+50, hY); ctx.fill(); // Crown
-        let tX = width*0.2; ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(tX, groundY, 80, Math.PI, 0); ctx.fill(); // Hill
-        ctx.fillStyle = '#c0392b'; ctx.fillRect(tX-4, groundY-250, 8, 180); ctx.beginPath(); ctx.arc(tX, groundY-180, 15, 0, Math.PI*2); ctx.fill(); // Tower
         
-        // Power Plant & Pixel Smoke
+        // Landmarks
+        let hX = width*0.75;
+        ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200);
+        ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
+
+        let tX = width*0.2; 
+        ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(tX, groundY, 80, Math.PI, 0); ctx.fill();
+        ctx.fillStyle = '#c0392b'; ctx.fillRect(tX-4, groundY-250, 8, 180);
+
+        // Power Plant
         let pX = width*0.9;
-        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120); // Plant
+        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
+        // Smoke Particles
         smokeParticles.forEach(p => {
-             ctx.fillStyle = '#7f8c8d'; // Grey pixel smoke
+             ctx.fillStyle = '#7f8c8d'; 
              ctx.fillRect(p.x, p.y, p.size, p.size);
              p.x += p.vx; p.y += p.vy; p.life--;
         });
@@ -494,10 +544,11 @@
         draw();
         requestAnimationFrame(gameLoop);
     }
-
-    // Initial Draw
+    
+    // Initial render
     drawBackground();
     drawPlayer();
+
 </script>
 </body>
 </html>
