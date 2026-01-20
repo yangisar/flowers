@@ -3,22 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flower Hike '85</title>
+    <title>SAMRATTAMA FLOWERS</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #222;
-            font-family: 'Courier New', Courier, monospace; /* Retro font */
-            touch-action: none;
+            background-color: #2c3e50;
+            font-family: 'Press Start 2P', cursive; /* Retro Pixel Font */
+            touch-action: none; /* Critical for mobile games */
+            user-select: none;
+            -webkit-user-select: none;
         }
+
         canvas {
             display: block;
-            margin: 0 auto;
-            /* Keep aspect ratio crisp */
-            image-rendering: pixelated; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            image-rendering: pixelated; /* Crisp pixel art */
         }
+
         #ui-layer {
             position: absolute;
             top: 0;
@@ -26,48 +29,58 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            padding: 10px;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
         }
+
         .hud-top {
+            padding: 15px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-        }
-        .retro-text {
             color: #fff;
-            text-shadow: 2px 2px 0px #000;
-            font-size: 18px;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 14px;
+            z-index: 5;
+        }
+
+        /* Virtual Controls overlay */
+        #controls-layer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 150px;
+            pointer-events: none; /* Let touches pass through to canvas handler */
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-sizing: border-box;
+        }
+
+        /* Visual guides for controls */
+        .control-zone {
+            width: 120px;
+            height: 120px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 10px;
+            text-align: center;
+        }
+        
+        .grab-btn {
+            border: 2px solid white;
+            background: rgba(46, 204, 113, 0.3);
+            color: white;
             font-weight: bold;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 10px;
-            border-radius: 4px;
-            border: 2px solid #fff;
         }
-        #health-container {
-            color: #ff69b4; /* Hot pink hearts */
-            font-size: 24px;
-        }
-        /* CRT Scanline Effect Overlay */
-        .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.1) 50%,
-                rgba(0,0,0,0.1)
-            );
-            background-size: 100% 4px;
-            pointer-events: none;
-            z-index: 50;
+        
+        .active-btn {
+            background: rgba(46, 204, 113, 0.8);
+            transform: scale(0.95);
         }
 
         #start-screen, #game-over-screen {
@@ -76,64 +89,81 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(34, 34, 34, 0.95);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            pointer-events: auto;
             z-index: 100;
+            pointer-events: auto;
             text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
+
         h1 { 
-            color: #ff9; 
-            text-shadow: 4px 4px 0 #d32f2f; 
-            font-size: 40px; 
+            color: #f1c40f; 
+            font-size: 24px; 
+            line-height: 1.5;
             margin-bottom: 10px;
-            line-height: 1.2;
+            text-shadow: 4px 4px #c0392b;
         }
-        p { font-size: 16px; margin: 5px 0 20px 0; color: #ccc;}
-        
+
+        .subtitle {
+            color: #bdc3c7;
+            font-size: 10px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
         button {
-            background: #ff69b4;
+            background: #e74c3c;
+            border: 4px solid #c0392b;
             color: white;
-            border: 4px solid #fff;
-            padding: 15px 30px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
+            padding: 15px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
             cursor: pointer;
-            box-shadow: 4px 4px 0px #000;
+            box-shadow: 0 6px #992d22;
+            margin-top: 10px;
         }
-        button:active { transform: translate(4px, 4px); box-shadow: none; }
+        button:active {
+            box-shadow: 0 0 #992d22;
+            transform: translateY(6px);
+        }
+
         .hidden { display: none !important; }
+
     </style>
 </head>
 <body>
 
-    <div class="scanlines"></div>
-
     <div id="ui-layer">
         <div class="hud-top">
-            <div class="retro-text">SCORE: <span id="score-display">0000</span></div>
-            <div id="health-container" class="retro-text">❤❤❤</div>
+            <div>🌺 <span id="score-display">0</span></div>
+            <div>SMOG: <span id="smog-level">LOW</span></div>
         </div>
-        <div class="retro-text" style="align-self: center;">ALT: <span id="alt-display">0</span>m</div>
+        
+        <div id="controls-layer">
+            <div class="control-zone" id="joystick-zone">MOVE<br>(DRAG)</div>
+            <div class="control-zone grab-btn" id="grab-zone">GRAB<br>(TAP)</div>
+        </div>
     </div>
 
     <div id="start-screen">
-        <h1>FLOWER<br>HIKE '85</h1>
-        <p>AUTO-RUN ENABLED!</p>
-        <p>Slide Left/Right to Steer</p>
-        <p>Avoid Blue Water!</p>
-        <button onclick="startGame()">START RUN</button>
+        <h1>SAMRATTAMA<br>FLOWERS</h1>
+        <div class="subtitle">
+            Help Samrat gather flowers in Almaty before the smog destroys them.<br><br>
+            Left Side: Move<br>Right Side: Grab
+        </div>
+        <button onclick="startGame()">START GATHERING</button>
     </div>
 
     <div id="game-over-screen" class="hidden">
-        <h1 id="end-title">GAME OVER</h1>
-        <p>Final Score: <span id="final-score">0</span></p>
+        <h1>SMOG WON</h1>
+        <p>Flowers Saved: <span id="final-score">0</span></p>
         <button onclick="resetGame()">TRY AGAIN</button>
     </div>
 
@@ -143,378 +173,457 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Make drawing look pixelated
-    ctx.imageSmoothingEnabled = false;
-
-    // --- Game Configuration ---
-    const MAP_HEIGHT = 25000; 
-    const RUN_SPEED = 6;  // Auto-run speed
-    const PIXEL_SIZE = 4; // Size of our "retro pixels"
+    // --- Asset Definitions (Procedural Pixel Art) ---
+    // We draw "sprites" using arrays of 1s and 0s or color codes
+    const PLAYER_COLOR = '#D2B48C'; // Light Brown
+    const HAT_COLOR = '#8B4513';
     
-    // Biome Colors (80s Palette)
-    const COLORS = {
-        meadow: '#98FB98', // Pale Green
-        forest: '#2E8B57', // Sea Green
-        mud:    '#D2691E', // Chocolate
-        rock:   '#778899', // Light Slate Gray
-        snow:   '#E0FFFF', // Light Cyan
-        water:  '#00BFFF', // Deep Sky Blue
-        foam:   '#F0F8FF', // Alice Blue
-        flower: ['#FF69B4', '#FFFF00', '#FF4500', '#DDA0DD'] // Hot Pink, Yellow, Orange, Plum
-    };
-
-    // State
+    // Game State
     let gameRunning = false;
     let width, height;
-    let cameraY = 0;
-    let score = 0;
-    let hp = 3;
     let frame = 0;
-    
-    // Entities
-    let player = { x: 0, y: 0, w: 24, h: 32 }; // Dimensions in real pixels
-    let entities = []; // Flowers and Decor
-    let streams = [];
-    let particles = [];
-    
-    // Input
-    let targetX = 0;
+    let score = 0;
+    let groundY = 0; // Where the playable floor starts
 
+    // Entities
+    let player = { x: 0, y: 0, vx: 0, vy: 0, w: 24, h: 36, speed: 4, actionFrame: 0 };
+    let flowers = [];
+    let clouds = []; // The Smog Monsters
+    let particles = [];
+
+    // Inputs
+    let joystick = { active: false, originX: 0, originY: 0, dx: 0, dy: 0 };
+    let grabPressed = false;
+
+    // --- Initialization ---
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        // Keep crisp
-        ctx.imageSmoothingEnabled = false;
-        if(!gameRunning) {
-            targetX = width / 2;
-        }
+        groundY = height * 0.45; // Horizon line
     }
     window.addEventListener('resize', resize);
     resize();
 
-    // --- Input Handling (Steering Only) ---
-    function handleInput(e) {
-        if(!gameRunning) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        targetX = clientX;
-    }
+    // --- Input Handling (Multi-touch) ---
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', handleTouchEnd);
     
-    window.addEventListener('mousemove', handleInput);
-    window.addEventListener('touchmove', handleInput);
-    window.addEventListener('touchstart', handleInput);
+    // Also basic mouse support for testing on PC
+    canvas.addEventListener('mousedown', (e) => {
+        if(e.clientX < width/2) {
+            joystick.active = true;
+            joystick.originX = e.clientX;
+            joystick.originY = e.clientY;
+        } else {
+            triggerGrab();
+        }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if(joystick.active) {
+            joystick.dx = e.clientX - joystick.originX;
+            joystick.dy = e.clientY - joystick.originY;
+        }
+    });
+    canvas.addEventListener('mouseup', () => { joystick.active = false; joystick.dx=0; joystick.dy=0; grabPressed = false; });
 
-    // --- Setup ---
-    function initGame() {
-        player.x = width / 2;
-        player.y = MAP_HEIGHT - 200;
-        cameraY = player.y - height + 200;
-        targetX = width / 2;
+    function handleTouch(e) {
+        e.preventDefault(); // Stop scrolling
         
-        score = 0;
-        hp = 3;
-        entities = [];
-        streams = [];
-        particles = [];
-        
-        // Procedural Generation of Static Objects (Flowers & Decor)
-        for(let y = MAP_HEIGHT - 500; y > 1000; y -= 40) { // Every 40px
-            // Density depends on biome, fewer flowers at top
-            if(Math.random() > 0.3) {
-                let type = 'flower';
-                if(Math.random() > 0.7) type = 'decor'; // Grass tuft or rock
+        // Reset joystick initially for this frame's calculation, logic handles persistence
+        let joyFound = false;
+        let grabFound = false;
 
-                entities.push({
-                    type: type,
-                    x: Math.random() * (width - 40) + 20,
-                    y: y,
-                    color: COLORS.flower[Math.floor(Math.random() * COLORS.flower.length)],
-                    collected: false
-                });
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i];
+            
+            // Left Side: Movement
+            if (t.clientX < width / 2) {
+                if (!joystick.active) {
+                    // New touch started
+                    joystick.active = true;
+                    joystick.originX = t.clientX;
+                    joystick.originY = t.clientY;
+                    joystick.id = t.identifier;
+                } else if (joystick.id === t.identifier) {
+                    // Moving existing touch
+                    joystick.dx = t.clientX - joystick.originX;
+                    joystick.dy = t.clientY - joystick.originY;
+                }
+                joyFound = true;
+            } 
+            // Right Side: Action
+            else {
+                if (!grabPressed) {
+                    triggerGrab();
+                    document.getElementById('grab-zone').classList.add('active-btn');
+                }
+                grabFound = true;
             }
         }
-        updateHUD();
     }
+
+    function handleTouchEnd(e) {
+        e.preventDefault();
+        // If no touches remain on left, kill joystick
+        let joyStillThere = false;
+        let grabStillThere = false;
+        
+        for (let i = 0; i < e.touches.length; i++) {
+            const t = e.touches[i];
+            if(t.clientX < width/2) joyStillThere = true;
+            else grabStillThere = true;
+        }
+
+        if(!joyStillThere) {
+            joystick.active = false;
+            joystick.dx = 0;
+            joystick.dy = 0;
+        }
+        if(!grabStillThere) {
+            grabPressed = false;
+            document.getElementById('grab-zone').classList.remove('active-btn');
+        }
+    }
+
+    function triggerGrab() {
+        if(grabPressed) return;
+        grabPressed = true;
+        player.actionFrame = 10; // Animation timer
+        
+        // Check collision with flowers
+        let collected = false;
+        flowers.forEach(f => {
+            if(!f.active || f.pixelsRevealed < 16) return; // Cant grab unformed flowers
+            
+            // Distance check
+            const dist = Math.hypot((player.x + player.w/2) - f.x, (player.y + player.h) - f.y);
+            
+            if(dist < 40) {
+                f.active = false;
+                score++;
+                createParticles(f.x, f.y, f.color);
+                collected = true;
+            }
+        });
+        
+        if(collected) {
+             document.getElementById('score-display').innerText = score;
+        }
+    }
+
+    // --- Game Logic ---
 
     function startGame() {
         document.getElementById('start-screen').classList.add('hidden');
-        initGame();
+        resetGameVars();
         gameRunning = true;
         gameLoop();
     }
 
     function resetGame() {
         document.getElementById('game-over-screen').classList.add('hidden');
-        startGame();
+        resetGameVars();
+        gameRunning = true;
+        gameLoop();
     }
 
-    function gameOver(win) {
-        gameRunning = false;
-        const screen = document.getElementById('game-over-screen');
-        const title = document.getElementById('end-title');
-        screen.classList.remove('hidden');
-        document.getElementById('final-score').innerText = score;
+    function resetGameVars() {
+        score = 0;
+        player.x = width / 2;
+        player.y = height - 100;
+        flowers = [];
+        clouds = [];
+        particles = [];
+        frame = 0;
+        document.getElementById('score-display').innerText = "0";
+    }
+
+    function spawnFlower() {
+        const colors = ['#e74c3c', '#f1c40f', '#9b59b6', '#3498db'];
+        // Spawn randomly on the ground area
+        const fx = Math.random() * (width - 40) + 20;
+        const fy = Math.random() * (height - groundY - 50) + groundY + 20;
         
-        if(win) {
-            title.innerText = "YOU REACHED THE GLACIER!";
-            title.style.color = "#87CEEB";
-        } else {
-            title.innerText = "GAME OVER";
-            title.style.color = "#FF69B4";
+        flowers.push({
+            x: fx,
+            y: fy,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            active: true,
+            pixelsRevealed: 0, // For the "pixel by pixel" spawn effect
+            pixelMap: createRandomPixelMap(), // Order of pixels appearing
+            timer: 0
+        });
+    }
+    
+    // Create a shuffled array of indices 0-24 (for a 5x5 flower grid)
+    function createRandomPixelMap() {
+        let arr = [];
+        for(let i=0; i<25; i++) arr.push(i);
+        // Shuffle
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
         }
+        return arr;
     }
 
-    // --- Core Logic ---
+    function spawnCloud() {
+        clouds.push({
+            x: Math.random() * width,
+            y: groundY - 100, // Starts in sky
+            size: 40,
+            speed: Math.random() * 1 + 0.5 + (score * 0.05), // Gets faster
+            target: null,
+            faceTimer: 0
+        });
+    }
+
     function update() {
-        if(!gameRunning) return;
         frame++;
 
-        // 1. Auto Run Upwards
-        player.y -= RUN_SPEED;
-
-        // 2. Steering (Smooth lerp towards finger position)
-        player.x += (targetX - player.x) * 0.15;
-
-        // Clamp bounds
-        if(player.x < 10) player.x = 10;
-        if(player.x > width - 10) player.x = width - 10;
-
-        // Win Condition
-        if(player.y < 200) {
-            gameOver(true);
-            return;
+        // 1. Player Movement
+        if(joystick.active) {
+            // Normalize vector
+            const len = Math.hypot(joystick.dx, joystick.dy);
+            if(len > 0) {
+                player.x += (joystick.dx / len) * player.speed;
+                player.y += (joystick.dy / len) * player.speed;
+            }
         }
 
-        // 3. Camera (Locks to player Y)
-        cameraY = player.y - (height * 0.8); // Player is near top/middle now
-        
-        // 4. Streams (Obstacles)
-        // Spawn randomly above the screen
-        if(frame % 40 === 0) {
-            let spawnY = cameraY - 50;
-            // Streams fall DOWN (y increases)
-            streams.push({
-                x: Math.random() * width,
-                y: spawnY,
-                w: Math.random() * 40 + 20,
-                h: 20, 
-                speed: Math.random() * 4 + 8, // Faster than player runs
-                active: true
-            });
+        // Clamp Player
+        if(player.x < 0) player.x = 0;
+        if(player.x > width - player.w) player.x = width - player.w;
+        if(player.y < groundY) player.y = groundY; // Can't walk in sky
+        if(player.y > height - player.h) player.y = height - player.h;
+
+        if(player.actionFrame > 0) player.actionFrame--;
+
+        // 2. Flowers spawning
+        if(frame % 60 === 0 && flowers.length < 15) {
+            spawnFlower();
         }
 
-        // Stream Logic
-        streams.forEach(s => {
-            s.y += s.speed;
-            s.h += s.speed; // Elongate to look like a strip
-
-            // Collision: Simple Box Box
-            if(s.active && 
-               player.x < s.x + s.w && player.x + player.w > s.x &&
-               player.y < s.y + s.h && player.y + player.h > s.y) {
-                
-                hurtPlayer();
-                s.active = false; // Disable collision after hit so you don't die instantly
+        flowers.forEach(f => {
+            if(f.active) {
+                // Pixel growth effect
+                if(f.pixelsRevealed < 25 && frame % 2 === 0) {
+                    f.pixelsRevealed++;
+                }
             }
         });
 
-        // 5. Flower Collection
-        entities.forEach(e => {
-            if(!e.collected && e.type === 'flower') {
-                // Distance check
-                const dx = player.x - e.x;
-                const dy = player.y - e.y;
-                if(Math.sqrt(dx*dx + dy*dy) < 30) {
-                    e.collected = true;
-                    score += 100;
-                    spawnSparkles(e.x, e.y, e.color);
-                    updateHUD();
+        // 3. Smog Clouds
+        if(frame % 200 === 0) spawnCloud();
+
+        clouds.forEach((c, idx) => {
+            // Find closest flower
+            let minDist = 9999;
+            let target = null;
+            
+            flowers.forEach(f => {
+                if(!f.active) return;
+                let d = Math.hypot(c.x - f.x, c.y - f.y);
+                if(d < minDist) {
+                    minDist = d;
+                    target = f;
+                }
+            });
+
+            if(target) {
+                // Move towards flower
+                let dx = target.x - c.x;
+                let dy = target.y - c.y;
+                let dist = Math.hypot(dx, dy);
+                c.x += (dx/dist) * c.speed;
+                c.y += (dy/dist) * c.speed;
+                
+                // Eat flower
+                if(dist < 10 && target.pixelsRevealed > 10) {
+                    target.active = false; // Flower eaten
+                    c.size += 5; // Cloud gets bigger
+                }
+            } else {
+                // Drift randomly if no flowers
+                c.y += Math.sin(frame * 0.05);
+            }
+            
+            // Check Collision with Player (Game Over?)
+            // Let's make it so collision pushes player or just annoyance?
+            // Prompt says: "help samrat gather... before smog destroys THEM". 
+            // So game over is usually time based or if all flowers die. 
+            // Let's make it: If cloud touches Samrat, he drops flowers (score goes down)
+            if(Math.hypot(player.x - c.x, player.y - c.y) < 30) {
+                if(score > 0 && frame % 30 === 0) {
+                    score--;
+                    document.getElementById('score-display').innerText = score;
+                    createParticles(player.x, player.y, 'grey');
                 }
             }
         });
 
         // Cleanup
-        streams = streams.filter(s => s.y < cameraY + height + 100);
-        
-        updateHUD();
+        flowers = flowers.filter(f => f.active);
+
+        // Win/Lose condition? Infinite arcade for now.
     }
 
-    function hurtPlayer() {
-        hp--;
-        // Screen shake effect logic could go here
-        spawnSparkles(player.x, player.y, '#FF0000');
-        if(hp <= 0) gameOver(false);
-    }
-
-    function spawnSparkles(x, y, color) {
+    function createParticles(x, y, color) {
         for(let i=0; i<8; i++) {
             particles.push({
                 x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                life: 30,
-                color: color,
-                size: Math.random() * 4 + 2
+                vx: (Math.random() - 0.5) * 5,
+                vy: (Math.random() - 0.5) * 5,
+                life: 20,
+                color: color
             });
         }
     }
 
-    function updateHUD() {
-        document.getElementById('score-display').innerText = score.toString().padStart(4, '0');
-        document.getElementById('alt-display').innerText = Math.floor(MAP_HEIGHT - player.y);
-        
-        let hearts = "";
-        for(let i=0; i<hp; i++) hearts += "❤";
-        document.getElementById('health-container').innerHTML = hearts;
-    }
-
-    // --- Rendering (The 80s Style) ---
-    
-    // Helper to draw a pixel rectangle
-    function drawPixelRect(x, y, w, h, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(Math.floor(x), Math.floor(y), w, h);
-    }
-
-    // Helper to draw the hero sprite (procedurally)
-    function drawHero(x, y) {
-        // Shadow
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
-        ctx.fillRect(x-8, y+12, 24, 6);
-
-        // Body (Yellow Jacket)
-        drawPixelRect(x-10, y-10, 20, 20, '#FFD700'); 
-        // Backpack (Brown)
-        drawPixelRect(x-4, y-12, 8, 24, '#8B4513');
-        // Head (Peach)
-        drawPixelRect(x-6, y-20, 12, 10, '#FFCC99');
-        // Hat (Red)
-        drawPixelRect(x-8, y-24, 16, 4, '#FF4500');
-        // Legs (moving animation)
-        let legOffset = Math.sin(frame * 0.5) * 6;
-        drawPixelRect(x-8, y+10 + legOffset, 6, 8, '#000080'); // Left
-        drawPixelRect(x+2, y+10 - legOffset, 6, 8, '#000080'); // Right
-    }
-
-    // Biome Calculation
-    function getBiomeColor(y) {
-        const progress = 1 - (y / MAP_HEIGHT); // 0 (bottom) to 1 (top)
-        
-        if(progress < 0.2) return COLORS.meadow;
-        if(progress < 0.45) return COLORS.forest;
-        if(progress < 0.6) return COLORS.mud;
-        if(progress < 0.8) return COLORS.rock;
-        return COLORS.snow;
-    }
-
+    // --- Rendering ---
     function draw() {
         // Clear
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = "#2c3e50"; // Dark Blue Sky (Smoggy)
         ctx.fillRect(0, 0, width, height);
 
-        ctx.save();
-        ctx.translate(0, -cameraY);
+        // 1. Draw Background (Almaty Skyline)
+        drawBackground();
 
-        // 1. Draw Terrain Background
-        // We draw chunks slightly larger than screen
-        let startY = Math.floor(cameraY / 100) * 100;
-        let endY = startY + height + 200;
-
-        for(let y = startY; y < endY; y+=50) {
-            ctx.fillStyle = getBiomeColor(y);
-            // Draw band
-            ctx.fillRect(0, y, width, 52); 
+        // 2. Draw Flowers (Pixel by Pixel effect)
+        flowers.forEach(f => {
+            ctx.fillStyle = f.color;
+            const size = 4; // size of one flower pixel
             
-            // Add texture (Dithering/noise) to make it look retro
-            if(y % 100 === 0) {
-                ctx.fillStyle = "rgba(0,0,0,0.05)";
-                for(let k=0; k<width; k+=10) {
-                     if(Math.random()>0.5) ctx.fillRect(k, y, 4, 4);
-                }
-            }
-        }
-
-        // 2. Draw Decor & Flowers
-        let viewTop = cameraY;
-        let viewBot = cameraY + height;
-
-        entities.forEach(e => {
-            if(e.y > viewTop - 50 && e.y < viewBot + 50 && !e.collected) {
-                if(e.type === 'flower') {
-                    // Stem
-                    drawPixelRect(e.x-2, e.y, 4, 10, '#006400');
-                    // Petals
-                    drawPixelRect(e.x-6, e.y-6, 12, 12, e.color);
-                    // Center
-                    drawPixelRect(e.x-2, e.y-2, 4, 4, '#FFF');
-                } else {
-                    // Decor (Grass tuft or rock)
-                    if(e.y > MAP_HEIGHT * 0.6) { // Grass/Forest
-                         ctx.fillStyle = '#004d00';
-                         ctx.fillRect(e.x, e.y, 4, 8);
-                         ctx.fillRect(e.x+4, e.y+4, 4, 4);
-                    } else { // Rock
-                         ctx.fillStyle = '#606060';
-                         ctx.fillRect(e.x, e.y, 12, 8);
-                    }
-                }
-            }
-        });
-
-        // 3. Draw Streams
-        streams.forEach(s => {
-            if(s.y + s.h > viewTop && s.y < viewBot) {
-                // Main Water
-                ctx.fillStyle = COLORS.water;
-                // Patterned water (Stripes)
-                ctx.fillRect(s.x, s.y, s.w, s.h);
+            // Draw pixels based on how many are revealed
+            for(let i=0; i<f.pixelsRevealed; i++) {
+                let pixelIndex = f.pixelMap[i];
+                let px = pixelIndex % 5;
+                let py = Math.floor(pixelIndex / 5);
                 
-                ctx.fillStyle = '#4FC3F7'; // Lighter blue stripes
-                for(let wy = s.y; wy < s.y + s.h; wy += 20) {
-                    ctx.fillRect(s.x + 4, wy + (frame % 20), s.w - 8, 4);
-                }
-
-                // Foam at head
-                ctx.fillStyle = COLORS.foam;
-                ctx.fillRect(s.x, s.y + s.h - 8, s.w, 8);
+                // Centered on f.x, f.y
+                ctx.fillRect(f.x + (px*size) - 10, f.y + (py*size) - 10, size, size);
             }
         });
 
-        // 4. Draw Player
-        drawHero(player.x, player.y);
+        // 3. Draw Player (Samrat)
+        drawSamrat();
+
+        // 4. Draw Smog Clouds
+        clouds.forEach(c => {
+            ctx.fillStyle = 'rgba(127, 140, 141, 0.9)';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Angry Face
+            ctx.fillStyle = 'black';
+            // Eyes
+            ctx.fillRect(c.x - 10, c.y - 5, 8, 4);
+            ctx.fillRect(c.x + 2, c.y - 5, 8, 4);
+            // Eyebrows (Angry slant)
+            ctx.beginPath();
+            ctx.moveTo(c.x - 12, c.y - 10);
+            ctx.lineTo(c.x - 2, c.y - 6);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(c.x + 12, c.y - 10);
+            ctx.lineTo(c.x + 2, c.y - 6);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Mouth
+            ctx.fillRect(c.x - 8, c.y + 10, 16, 4);
+        });
 
         // 5. Particles
         particles.forEach((p, idx) => {
             ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, p.size, p.size);
+            ctx.fillRect(p.x, p.y, 4, 4);
             p.x += p.vx;
             p.y += p.vy;
             p.life--;
             if(p.life <= 0) particles.splice(idx, 1);
         });
 
-        // 6. The Glacier (Goal)
-        if(viewTop < 600) {
-            ctx.fillStyle = "#F0FFFF"; // Glacier Color
-            ctx.fillRect(0, -800, width, 1000);
-            
-            // Face on the glacier
-            ctx.fillStyle = "#000";
-            // Eyes
-            ctx.fillRect(width/2 - 40, -200, 20, 20);
-            ctx.fillRect(width/2 + 20, -200, 20, 20);
-            // Smile
-            ctx.fillRect(width/2 - 40, -150, 100, 10);
-            ctx.fillRect(width/2 - 40, -150, 10, 30);
-            ctx.fillRect(width/2 + 50, -150, 10, 30);
-            ctx.fillRect(width/2 - 40, -120, 100, 10);
-        }
-
-        ctx.restore();
-
         if(gameRunning) requestAnimationFrame(() => { update(); draw(); });
     }
 
-    requestAnimationFrame(() => { draw(); });
+    function drawSamrat() {
+        let x = player.x;
+        let y = player.y;
+        
+        // Brown Suit
+        ctx.fillStyle = PLAYER_COLOR;
+        ctx.fillRect(x, y, player.w, player.h);
+        
+        // Hat
+        ctx.fillStyle = HAT_COLOR;
+        ctx.fillRect(x - 4, y - 6, player.w + 8, 8); // Brim
+        ctx.fillRect(x + 2, y - 14, player.w - 4, 8); // Top
+        
+        // Arm Animation (Reaching)
+        if(player.actionFrame > 0) {
+            ctx.fillStyle = PLAYER_COLOR;
+            ctx.fillRect(x + player.w, y + 10, 12, 6); // Arm sticking out right
+        }
+    }
+
+    function drawBackground() {
+        // Mountains (Trans-Ili Alatau)
+        ctx.fillStyle = '#34495e';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        ctx.lineTo(width * 0.2, groundY - 100);
+        ctx.lineTo(width * 0.4, groundY - 50);
+        ctx.lineTo(width * 0.6, groundY - 150);
+        ctx.lineTo(width * 0.8, groundY - 80);
+        ctx.lineTo(width, groundY - 120);
+        ctx.lineTo(width, groundY);
+        ctx.fill();
+
+        // Hotel Kazakhstan (Tall curved building with crown)
+        let hkX = width * 0.7;
+        let hkY = groundY - 160;
+        ctx.fillStyle = '#95a5a6';
+        ctx.fillRect(hkX, hkY, 40, 160); // Main body
+        // Crown
+        ctx.fillStyle = '#f1c40f'; // Gold top
+        ctx.fillRect(hkX, hkY - 10, 40, 10);
+        
+        // TV Tower (Kok Tobe) on a hill
+        let hillX = width * 0.2;
+        ctx.fillStyle = '#27ae60';
+        ctx.beginPath();
+        ctx.arc(hillX, groundY, 60, Math.PI, 0); // Hill
+        ctx.fill();
+        
+        // Tower
+        ctx.fillStyle = '#c0392b'; // Red/White tower
+        ctx.fillRect(hillX - 2, groundY - 180, 4, 120); // Stick
+        ctx.fillRect(hillX - 5, groundY - 140, 10, 10); // Ball part
+
+        // Power Plant Tubes
+        let ppX = width * 0.9;
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(ppX, groundY - 100, 20, 100);
+        ctx.fillRect(ppX - 25, groundY - 80, 20, 80);
+        
+        // Smoke
+        ctx.fillStyle = 'rgba(189, 195, 199, 0.6)';
+        let smokeOffset = (frame % 100) / 2;
+        ctx.beginPath();
+        ctx.arc(ppX + 10, groundY - 110 - smokeOffset, 10 + smokeOffset/5, 0, Math.PI*2);
+        ctx.fill();
+
+        // Ground Floor
+        ctx.fillStyle = '#27ae60'; // Green grass
+        ctx.fillRect(0, groundY, width, height - groundY);
+    }
+
+    // Start loop
+    draw();
 
 </script>
 </body>
