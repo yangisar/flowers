@@ -10,7 +10,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(to bottom, #87CEEB, #E0F7FA); /* Sky Gradient */
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
             font-family: 'VT323', monospace;
             touch-action: none;
             user-select: none;
@@ -20,7 +20,7 @@
             display: block;
             width: 100%;
             height: 100%;
-            image-rendering: pixelated; /* Crisp pixel art look */
+            image-rendering: pixelated;
         }
 
         a { color: #f1c40f; text-decoration: none; }
@@ -242,8 +242,9 @@
     let pmLevel = 35;
 
     // Entities
+    // Player (Samrat) is skinnier now (w:30 instead of 40)
     let player = { 
-        x: 0, y: 0, w: 40, h: 70, // Slightly bigger for detail
+        x: 0, y: 0, w: 30, h: 70, 
         baseSpeed: 5, speed: 5,
         facingRight: true, 
         attacking: false, attackTimer: 0,
@@ -265,7 +266,7 @@
     let clouds = [];
     let cars = [];
     let waterDrops = [];
-    let speedBoots = []; // New Item
+    let speedBoots = [];
     let particles = [];
     let smokeParticles = [];
     let exhaustParticles = [];
@@ -279,7 +280,8 @@
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
-        groundY = height * 0.55;
+        // Valley size increased by ~15% (groundY is higher up)
+        groundY = height * 0.40; 
         if(!isPlaying) { 
             player.x = width/2; player.y = groundY + 50; 
             gardener.x = width*0.7; gardener.y = groundY + 80;
@@ -518,7 +520,13 @@
         if (flowers.length + seeds.length < 25) { 
             gardener.seedTimer--;
             if (gardener.seedTimer <= 0) {
-                seeds.push({ x: gardener.x + gardener.w / 2, y: gardener.y + gardener.h, life: 120 });
+                const seedColors = ['#D2B48C', '#e91e63', '#f1c40f', '#3498db'];
+                seeds.push({ 
+                    x: gardener.x + gardener.w / 2, 
+                    y: gardener.y + gardener.h, 
+                    life: 120,
+                    color: seedColors[Math.floor(Math.random() * seedColors.length)]
+                });
                 gardener.seedTimer = gardener.seedInterval;
             }
         }
@@ -571,7 +579,7 @@
         if(frames % carRate === 0) spawnCar(); 
         
         if(frames % 600 === 0) spawnWaterDrop();
-        if(frames % 900 === 0) spawnBoots(); // Spawn boots every ~15s
+        if(frames % 900 === 0) spawnBoots(); 
 
         flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
 
@@ -623,81 +631,52 @@
         for(let i=0; i<15; i++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, color: color, life: 25, size: 5 });
     }
 
-    // --- DRAWING FUNCTIONS (MAX LEVEL) ---
+    // --- DRAWING FUNCTIONS ---
 
     function draw() {
         ctx.clearRect(0,0,width,height);
         drawBackground();
 
-        // Seeds
-        ctx.fillStyle = '#5D4037'; seeds.forEach(s => ctx.fillRect(s.x - 3, s.y - 3, 6, 6));
+        // Seeds (Colorful)
+        seeds.forEach(s => {
+            ctx.fillStyle = s.color; 
+            ctx.fillRect(s.x - 3, s.y - 3, 6, 6);
+        });
 
-        // Flowers (Detailed)
+        // Flowers
         flowers.forEach(f => {
-            let h = f.growth * 40;
-            // Stem
-            ctx.fillStyle = '#2ecc71'; ctx.fillRect(f.x-2, f.y-h, 4, h);
-            // Leaves
-            if(f.growth > 0.5) {
-                ctx.beginPath(); ctx.ellipse(f.x-5, f.y-h/2, 6, 3, -0.5, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(f.x+5, f.y-h/2, 6, 3, 0.5, 0, Math.PI*2); ctx.fill();
-            }
-            // Petals
+            let h = f.growth * 40, r = f.growth * 8;
+            ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h);
             if(f.growth > 0.2) {
                 ctx.fillStyle = f.color;
-                for(let i=0; i<6; i++) {
-                    let a = (i*Math.PI*2)/6 + frames*0.02;
-                    let r = f.growth * 10;
+                for(let i=0; i<5; i++) {
+                    let a = (i*Math.PI*2)/5;
                     ctx.beginPath(); ctx.arc(f.x + Math.cos(a)*r, (f.y-h) + Math.sin(a)*r, r*0.8, 0, Math.PI*2); ctx.fill();
                 }
-                ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(f.x, f.y-h, f.growth*5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ffe'; ctx.beginPath(); ctx.arc(f.x, f.y-h, r*0.5, 0, Math.PI*2); ctx.fill();
             }
         });
 
-        // Items
         drawItems();
 
-        // Cars (Detailed)
+        // Cars
         cars.forEach(c => {
-            // Body
-            ctx.fillStyle = c.color; 
-            ctx.beginPath(); ctx.roundRect(c.x, c.y, c.w, c.h, 5); ctx.fill();
-            // Roof
-            ctx.fillStyle = '#2c3e50'; 
-            ctx.beginPath(); ctx.roundRect(c.x + 10, c.y - 12, c.w - 20, 15, [5,5,0,0]); ctx.fill();
-            // Windows
-            ctx.fillStyle = '#87CEEB'; 
-            ctx.fillRect(c.x + 12, c.y - 8, 20, 8); 
-            ctx.fillRect(c.x + c.w - 32, c.y - 8, 20, 8);
-            // Wheels
-            ctx.fillStyle = '#000'; 
-            ctx.beginPath(); ctx.arc(c.x + 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(c.x + c.w - 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill();
-            // Hubcaps
-            ctx.fillStyle = '#95a5a6';
-            ctx.beginPath(); ctx.arc(c.x + 15, c.y + c.h, 4, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(c.x + c.w - 15, c.y + c.h, 4, 0, Math.PI*2); ctx.fill();
-            // Lights
-            ctx.fillStyle = c.vx > 0 ? '#f1c40f' : '#c0392b';
-            ctx.fillRect(c.vx > 0 ? c.x + c.w - 5 : c.x, c.y + 10, 5, 10);
+            ctx.fillStyle = c.color; ctx.beginPath(); ctx.roundRect(c.x, c.y, c.w, c.h, 5); ctx.fill();
+            ctx.fillStyle = '#2c3e50'; ctx.beginPath(); ctx.roundRect(c.x + 10, c.y - 12, c.w - 20, 15, [5,5,0,0]); ctx.fill();
+            ctx.fillStyle = '#87CEEB'; ctx.fillRect(c.x + 12, c.y - 8, 20, 8); ctx.fillRect(c.x + c.w - 32, c.y - 8, 20, 8);
+            ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(c.x + 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(c.x + c.w - 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = c.vx > 0 ? '#f1c40f' : '#c0392b'; ctx.fillRect(c.vx > 0 ? c.x + c.w - 5 : c.x, c.y + 10, 5, 10);
         });
 
         drawGardener();
         drawPlayer();
 
-        // Clouds (Fluffy)
+        // Clouds
         clouds.forEach(c => {
             ctx.fillStyle = 'rgba(189, 195, 199, 0.9)';
-            ctx.beginPath(); 
-            ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
-            ctx.arc(c.x-c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2);
-            ctx.arc(c.x+c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2);
-            ctx.arc(c.x, c.y-c.size*0.5, c.size*0.8, 0, Math.PI*2);
-            ctx.fill();
-            // Face
-            ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5); 
-            ctx.fillRect(c.x-6, c.y+12, 12, 3);
+            ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); ctx.arc(c.x-c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2);
+            ctx.arc(c.x+c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#2c3e50'; ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5); ctx.fillRect(c.x-6, c.y+12, 12, 3);
         });
 
         // Particles
@@ -715,209 +694,99 @@
             ctx.beginPath(); ctx.arc(w.x, y, 12, 0, Math.PI, false); ctx.lineTo(w.x, y - 18); ctx.fill();
             ctx.fillStyle = 'white'; ctx.fillRect(w.x - 4, y - 6, 3, 3); ctx.fillStyle = '#3498db';
         });
-
-        // Boots (Flask)
+        // Boots
         speedBoots.forEach(b => {
             let y = b.y + Math.sin((frames + b.floatOffset) * 0.1) * 5;
-            // Glow
-            ctx.shadowBlur = 10; ctx.shadowColor = '#f1c40f';
-            ctx.fillStyle = '#e67e22';
-            // Boot Shape
-            ctx.beginPath();
-            ctx.moveTo(b.x - 10, y - 15);
-            ctx.lineTo(b.x + 5, y - 15);
-            ctx.lineTo(b.x + 5, y + 5);
-            ctx.lineTo(b.x + 15, y + 5);
-            ctx.lineTo(b.x + 15, y + 15);
-            ctx.lineTo(b.x - 10, y + 15);
-            ctx.closePath();
-            ctx.fill();
-            // Wing
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.moveTo(b.x - 5, y - 5); ctx.lineTo(b.x - 15, y - 15); ctx.lineTo(b.x - 5, y - 10); ctx.fill();
+            ctx.shadowBlur = 10; ctx.shadowColor = '#f1c40f'; ctx.fillStyle = '#e67e22';
+            ctx.beginPath(); ctx.moveTo(b.x - 10, y - 15); ctx.lineTo(b.x + 5, y - 15); ctx.lineTo(b.x + 5, y + 5); ctx.lineTo(b.x + 15, y + 5); ctx.lineTo(b.x + 15, y + 15); ctx.lineTo(b.x - 10, y + 15); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(b.x - 5, y - 5); ctx.lineTo(b.x - 15, y - 15); ctx.lineTo(b.x - 5, y - 10); ctx.fill();
             ctx.shadowBlur = 0;
         });
     }
-
-    // --- ANIMATED CHARACTER DRAWING ---
     
     function drawHuman(x, y, w, h, colorBody, colorHead, isMoving, facingRight, isGardener) {
         let cx = x + w/2;
-        let legOffset = 0;
-        let armOffset = 0;
-        
-        if (isMoving) {
-            legOffset = Math.sin(frames * 0.2) * 8;
-            armOffset = Math.cos(frames * 0.2) * 8;
-        }
-
+        let legOffset = isMoving ? Math.sin(frames * 0.2) * 8 : 0;
+        let armOffset = isMoving ? Math.cos(frames * 0.2) * 8 : 0;
         ctx.save();
-        
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.beginPath(); ctx.ellipse(cx, y + h, w/1.5, 5, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(cx, y + h, w/1.5, 5, 0, 0, Math.PI*2); ctx.fill(); // Shadow
 
         // Legs
-        if (!isGardener) { // Samrat Legs
-            ctx.fillStyle = '#5D4037'; // Pants
-            ctx.fillRect(cx - 12 - (facingRight?legOffset:-legOffset), y + h - 25, 10, 25); // Back leg
-            ctx.fillRect(cx + 2 + (facingRight?legOffset:-legOffset), y + h - 25, 10, 25); // Front leg
-        } else { // Gardener Legs (Peeking)
-            ctx.fillStyle = '#D2B48C'; // Skin
-            ctx.fillRect(cx - 10 + legOffset, y + h - 10, 8, 10);
-            ctx.fillRect(cx + 2 - legOffset, y + h - 10, 8, 10);
+        if (!isGardener) { 
+            ctx.fillStyle = '#5D4037'; ctx.fillRect(cx - 10 - (facingRight?legOffset:-legOffset), y + h - 25, 8, 25); 
+            ctx.fillRect(cx + 2 + (facingRight?legOffset:-legOffset), y + h - 25, 8, 25);
+        } else { 
+            ctx.fillStyle = '#D2B48C'; ctx.fillRect(cx - 8 + legOffset, y + h - 10, 6, 10); ctx.fillRect(cx + 2 - legOffset, y + h - 10, 6, 10);
         }
-
         // Body
         ctx.fillStyle = colorBody;
         if(isGardener) {
-            // Dress Top
             ctx.fillRect(x + 5, y + 20, w - 10, 25);
-            // Skirt (Triangle)
+            // Skirt (Upward Triangle)
             ctx.beginPath();
-            ctx.moveTo(x, y + 45);
-            ctx.lineTo(x + w, y + 45);
-            ctx.lineTo(x + w/2 + (Math.sin(frames*0.1)*2), y + h - 5);
+            ctx.moveTo(x + w/2, y + 45); // Point at waist
+            ctx.lineTo(x - 5 + (Math.sin(frames*0.1)*2), y + h - 5); // Bottom left
+            ctx.lineTo(x + w + 5 + (Math.sin(frames*0.1)*2), y + h - 5); // Bottom right
             ctx.fill();
         } else {
-            // Samrat Shirt
-            ctx.fillRect(x, y + 20, w, 35);
-            // Belt
-            ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(x, y + 50, w, 5);
+            ctx.fillRect(x, y + 20, w, 35); ctx.fillStyle = '#2c3e50'; ctx.fillRect(x, y + 50, w, 5);
         }
-
         // Head
-        ctx.fillStyle = colorHead; // Skin
-        ctx.fillRect(cx - 10, y, 20, 20);
-        
-        // Hair/Face features
+        ctx.fillStyle = colorHead; ctx.fillRect(cx - 10, y, 20, 20);
         if(isGardener) {
-            ctx.fillStyle = '#3e2723'; // Dark Hair
-            ctx.fillRect(cx - 12, y - 5, 24, 10);
-            ctx.fillRect(cx - 12, y, 6, 20); // Long hair side
-            ctx.fillRect(cx + 6, y, 6, 20); // Long hair side
+            ctx.fillStyle = '#3e2723'; ctx.fillRect(cx - 12, y - 5, 24, 10); ctx.fillRect(cx - 12, y, 6, 20); ctx.fillRect(cx + 6, y, 6, 20);
         } else {
-            ctx.fillStyle = '#2c3e50'; // Hero Hair
-            ctx.fillRect(cx - 10, y, 20, 6);
-            ctx.fillStyle = '#e74c3c'; // Bandana
-            ctx.fillRect(cx - 10, y + 6, 20, 4);
-            if(facingRight) ctx.fillRect(cx - 15, y+6, 5, 4); // Knot
+            ctx.fillStyle = '#2c3e50'; ctx.fillRect(cx - 10, y, 20, 6); ctx.fillStyle = '#e74c3c'; ctx.fillRect(cx - 10, y + 6, 20, 4); if(facingRight) ctx.fillRect(cx - 15, y+6, 5, 4);
         }
-
         // Arms
-        ctx.fillStyle = colorHead; // Skin arms
+        ctx.fillStyle = colorHead;
         if(isGardener) {
-            // Planting animation
-            let plantY = Math.abs(Math.sin(frames*0.1)) * 5;
-            ctx.fillRect(cx - 15, y + 25 + plantY, 8, 15);
-            ctx.fillRect(cx + 7, y + 25 + plantY, 8, 15);
+            let plantY = Math.abs(Math.sin(frames*0.1)) * 5; ctx.fillRect(cx - 15, y + 25 + plantY, 8, 15); ctx.fillRect(cx + 7, y + 25 + plantY, 8, 15);
         } else {
-            // Hero Arms
-            // Back arm
-            ctx.fillRect(cx - 15 + (facingRight?armOffset:-armOffset), y + 25, 8, 20);
-            
-            // Front Arm + Sword
+            ctx.fillRect(cx - 12 + (facingRight?armOffset:-armOffset), y + 25, 6, 20);
             ctx.save();
-            let frontArmX = cx + 5 + (facingRight?-armOffset:armOffset);
+            let frontArmX = cx + 6 + (facingRight?-armOffset:armOffset);
             ctx.translate(frontArmX, y + 25);
-            
-            if(player.attacking) {
-                // Swing rotation
-                let swingAngle = (Math.PI/2) * (player.attackTimer/10) * (facingRight ? 1 : -1);
-                ctx.rotate(swingAngle - Math.PI/4);
-            }
-
-            ctx.fillRect(0, 0, 8, 20); // Arm
-            
-            // Sword Logic attached to hand
-            if(player.attacking || !player.attacking) {
-                 ctx.translate(4, 18);
-                 if(!facingRight) ctx.scale(-1, 1);
-                 
-                 // Sword
-                 ctx.fillStyle = '#95a5a6'; // Guard
-                 ctx.fillRect(-6, 0, 12, 4);
-                 ctx.fillStyle = '#bdc3c7'; // Blade
-                 ctx.fillRect(-2, 4, 4, 30);
-                 
-                 // Swish Effect
-                 if(player.attacking) {
-                     ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-                     ctx.lineWidth = 3;
-                     ctx.beginPath();
-                     ctx.arc(0, 0, 40, 0, Math.PI, false);
-                     ctx.stroke();
-                 }
-            }
+            if(player.attacking) { let swingAngle = (Math.PI/2)*(player.attackTimer/10)*(facingRight?1:-1); ctx.rotate(swingAngle-Math.PI/4); }
+            ctx.fillRect(0, 0, 6, 20); 
+            ctx.translate(3, 18); if(!facingRight) ctx.scale(-1, 1);
+            ctx.fillStyle = '#95a5a6'; ctx.fillRect(-6, 0, 12, 4); ctx.fillStyle = '#bdc3c7'; ctx.fillRect(-2, 4, 4, 30);
+            if(player.attacking) { ctx.strokeStyle='rgba(255,255,255,0.8)'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(0,0,40,0,Math.PI,false); ctx.stroke(); }
             ctx.restore();
         }
-
         ctx.restore();
     }
 
-    function drawGardener() {
-        drawHuman(gardener.x, gardener.y, gardener.w, gardener.h, '#e91e63', '#ffccbc', true, gardener.facingRight, true);
-    }
+    function drawGardener() { drawHuman(gardener.x, gardener.y, gardener.w, gardener.h, '#e91e63', '#ffccbc', true, gardener.facingRight, true); }
 
-    function drawPlayer() {
-        if(player.hurtCooldown > 0 && frames%4 < 2) return;
-        drawHuman(player.x, player.y, player.w, player.h, '#f39c12', '#ffccbc', player.moving, player.facingRight, false);
-    }
+    function drawPlayer() { if(player.hurtCooldown > 0 && frames%4 < 2) return; drawHuman(player.x, player.y, player.w, player.h, '#f39c12', '#ffccbc', player.moving, player.facingRight, false); }
 
     function drawBackground() {
-        // Sky Gradient
-        let grd = ctx.createLinearGradient(0, 0, 0, height);
-        grd.addColorStop(0, "#87CEEB");
-        grd.addColorStop(0.6, "#E0F7FA");
-        grd.addColorStop(0.6, "#27ae60"); // Ground line
-        grd.addColorStop(1, "#2ecc71");
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, width, height);
+        let grd = ctx.createLinearGradient(0, 0, 0, height); grd.addColorStop(0, "#87CEEB"); grd.addColorStop(0.6, "#E0F7FA"); grd.addColorStop(0.6, "#27ae60"); grd.addColorStop(1, "#2ecc71"); ctx.fillStyle = grd; ctx.fillRect(0, 0, width, height);
         
-        // Mountains (Parallax)
-        ctx.fillStyle = 'rgba(44, 62, 80, 0.3)';
-        ctx.beginPath();
-        ctx.moveTo(0, groundY);
-        for(let i=0; i<=width; i+=50) {
-            ctx.lineTo(i, groundY - 100 - Math.sin(i*0.01 + frames*0.001)*50);
-        }
-        ctx.lineTo(width, groundY);
-        ctx.fill();
+        // Mountains
+        ctx.fillStyle = 'rgba(44, 62, 80, 0.3)'; ctx.beginPath(); ctx.moveTo(0, groundY); for(let i=0; i<=width; i+=50) ctx.lineTo(i, groundY - 100 - Math.sin(i*0.01 + frames*0.001)*50); ctx.lineTo(width, groundY); ctx.fill();
 
-        // City Silhouette
-        ctx.fillStyle = 'rgba(52, 73, 94, 0.5)';
-        for(let i=0; i<width; i+=40) {
-            let h = 20 + Math.sin(i*123)*20 + 30;
-            ctx.fillRect(i, groundY - h, 45, h);
-        }
+        // City
+        ctx.fillStyle = 'rgba(52, 73, 94, 0.5)'; for(let i=0; i<width; i+=40) { let h = 20 + Math.sin(i*123)*20 + 30; ctx.fillRect(i, groundY - h, 45, h); }
 
-        // TV Tower (Almaty)
-        let tx = width * 0.2;
-        ctx.fillStyle = '#7f8c8d'; 
-        ctx.fillRect(tx - 3, groundY - 220, 6, 220); // Spire
-        ctx.beginPath(); ctx.ellipse(tx, groundY - 150, 20, 10, 0, 0, Math.PI*2); ctx.fill(); // Pod
+        // Hotel Kazakhstan (Iconic curved shape)
+        let hkX = width * 0.5; let hkW = 60; let hkH = 180;
+        ctx.fillStyle = 'rgba(60, 80, 100, 0.6)'; 
+        ctx.fillRect(hkX - hkW/2, groundY - hkH, hkW, hkH); // Main Body
+        ctx.beginPath(); ctx.moveTo(hkX - hkW/2 - 10, groundY - hkH + 20); ctx.quadraticCurveTo(hkX, groundY - hkH - 30, hkX + hkW/2 + 10, groundY - hkH + 20); ctx.lineTo(hkX + hkW/2, groundY - hkH); ctx.lineTo(hkX - hkW/2, groundY - hkH); ctx.fill(); // Crown
+        ctx.fillRect(hkX - 2, groundY - hkH - 40, 4, 40); // Spire
+
+        // TV Tower
+        let tx = width * 0.2; ctx.fillStyle = '#7f8c8d'; ctx.fillRect(tx - 3, groundY - 220, 6, 220); ctx.beginPath(); ctx.ellipse(tx, groundY - 150, 20, 10, 0, 0, Math.PI*2); ctx.fill();
 
         // Smoke Stack
-        let pX = width*0.9; 
-        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
-        smokeParticles.forEach(p => { 
-            ctx.fillStyle = `rgba(127, 140, 141, ${p.life/100})`; 
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); 
-            p.x += p.vx; p.y += p.vy; p.life--; 
-        });
+        let pX = width*0.9; ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
+        smokeParticles.forEach(p => { ctx.fillStyle = `rgba(127, 140, 141, ${p.life/100})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); p.x += p.vx; p.y += p.vy; p.life--; });
     }
 
-    function gameLoop() {
-        if(!isPlaying) return;
-        update();
-        draw();
-        animationId = requestAnimationFrame(gameLoop);
-    }
-    
-    drawBackground();
-    drawPlayer();
-
+    function gameLoop() { if(!isPlaying) return; update(); draw(); animationId = requestAnimationFrame(gameLoop); }
+    drawBackground(); drawPlayer();
 </script>
 </body>
 </html>
