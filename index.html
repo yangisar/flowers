@@ -243,7 +243,15 @@
         health: 100, hurtCooldown: 0 
     };
     
+    // The Gardener (Woman in Pink)
+    let gardener = {
+        x: 0, y: 0, w: 30, h: 50,
+        dx: 2, dy: 1,
+        seedTimer: 0, seedInterval: 90 // Plant every ~1.5s
+    };
+    
     let flowers = [];
+    let seeds = [];
     let clouds = [];
     let cars = [];
     let waterDrops = [];
@@ -260,7 +268,10 @@
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
         groundY = height * 0.55;
-        if(!isPlaying) { player.x = width/2; player.y = groundY + 50; }
+        if(!isPlaying) { 
+            player.x = width/2; player.y = groundY + 50; 
+            gardener.x = width*0.7; gardener.y = groundY + 80;
+        }
     }
     window.addEventListener('resize', resize);
     resize();
@@ -317,7 +328,7 @@
         
         document.getElementById('attack-indicator').classList.add('pressed');
         player.attacking = true;
-        player.attackTimer = 10; // Frames for sword animation
+        player.attackTimer = 10; 
 
         let reach = 60;
         let cx = player.x + player.w/2 + (player.facingRight ? 20 : -20);
@@ -344,8 +355,7 @@
                cy > c.y - 30 && cy < c.y + c.h + 30
             ) {
                 cars.splice(idx, 1);
-                smogCleared++; // Cars count as smog sources
-                
+                smogCleared++; 
                 spawnFlowerAt(c.x + c.w/2, c.y + c.h);
                 spawnParticles(c.x + c.w/2, c.y, '#e74c3c'); 
                 spawnParticles(c.x + c.w/2, c.y, '#f1c40f'); 
@@ -408,10 +418,13 @@
         player.x = width/2; player.y = groundY + 50;
         player.attacking = false;
         
-        flowers = []; clouds = []; cars = []; waterDrops = [];
+        gardener.x = width*0.7; gardener.y = groundY + 80;
+        gardener.seedTimer = 0;
+        
+        flowers = []; seeds = []; clouds = []; cars = []; waterDrops = [];
         particles = []; smokeParticles = []; exhaustParticles = []; rainParticles = [];
         
-        for(let i=0; i<5; i++) spawnFlower(); // Start with more flowers
+        // No initial flowers, let the gardener plant them
         updateHUD();
         isPlaying = true;
         gameLoop();
@@ -467,10 +480,6 @@
         else pmEl.style.color = "#8e44ad";
     }
 
-    function spawnFlower() {
-        spawnFlowerAt(Math.random() * (width - 60) + 30, Math.random() * (height - groundY - 80) + groundY + 40);
-    }
-    
     function spawnFlowerAt(x, y) {
         const colors = ['#e91e63', '#ffeb3b', '#ff5722', '#9c27b0'];
         flowers.push({
@@ -513,6 +522,34 @@
         });
     }
 
+    function updateGardener() {
+        // Wander logic
+        if (frames % 60 === 0 && Math.random() < 0.5) gardener.dx = (Math.random() - 0.5) * 4;
+        if (frames % 60 === 0 && Math.random() < 0.5) gardener.dy = (Math.random() - 0.5) * 2;
+
+        gardener.x += gardener.dx;
+        gardener.y += gardener.dy;
+
+        // Boundaries check
+        if (gardener.x < 0 || gardener.x > width - gardener.w) gardener.dx *= -1;
+        if (gardener.y < groundY || gardener.y > height - gardener.h) gardener.dy *= -1;
+        gardener.x = Math.max(0, Math.min(width - gardener.w, gardener.x));
+        gardener.y = Math.max(groundY, Math.min(height - gardener.h, gardener.y));
+
+        // Seeding logic
+        if (flowers.length + seeds.length < 25) { // Cap total plants
+            gardener.seedTimer--;
+            if (gardener.seedTimer <= 0) {
+                seeds.push({
+                    x: gardener.x + gardener.w / 2,
+                    y: gardener.y + gardener.h,
+                    life: 120 // Time to grow
+                });
+                gardener.seedTimer = gardener.seedInterval;
+            }
+        }
+    }
+
     function update() {
         frames++;
         if(player.hurtCooldown > 0) player.hurtCooldown--;
@@ -525,26 +562,25 @@
         }
         
         // Difficulty Ramp
-        if(frames % 300 === 0) {
-            difficultyFactor += 0.25; 
+        if(frames % 300 === 0) difficultyFactor += 0.25;
+
+        // Gardener & Seeds
+        updateGardener();
+        for (let i = seeds.length - 1; i >= 0; i--) {
+            seeds[i].life--;
+            if (seeds[i].life <= 0) {
+                spawnFlowerAt(seeds[i].x, seeds[i].y);
+                seeds.splice(i, 1);
+            }
         }
 
         // Rain Logic
         if(rainTimer > 0) {
             rainTimer--;
             for(let i=0; i<3; i++) {
-                rainParticles.push({
-                    x: Math.random() * width, y: -20,
-                    vx: 0, vy: 15, life: 60
-                });
+                rainParticles.push({ x: Math.random() * width, y: -20, vx: 0, vy: 15, life: 60 });
             }
-            clouds.forEach(c => { 
-                if(c.active) { 
-                    c.active = false; 
-                    smogCleared++; 
-                    spawnParticles(c.x, c.y, '#7f8c8d'); 
-                }
-            });
+            clouds.forEach(c => { if(c.active) { c.active = false; smogCleared++; spawnParticles(c.x, c.y, '#7f8c8d'); }});
         }
 
         // Player Move
@@ -556,14 +592,10 @@
         player.x = Math.max(0, Math.min(width - player.w, player.x));
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Spawners
-        // Flowers spawn often to keep garden lush
-        if(frames % 120 === 0 && flowers.length < 15) spawnFlower();
-        
+        // Spawners (Removed automatic flower spawner)
         let cloudRate = Math.max(15, Math.floor(100 / difficultyFactor));
         if(frames % cloudRate === 0) spawnCloud();
         
-        // Cars are RARE (seldom)
         let carRate = Math.max(100, Math.floor(600 / difficultyFactor)); 
         if(frames % carRate === 0) spawnCar(); 
         
@@ -574,20 +606,10 @@
 
         // Cars
         for(let i = cars.length -1; i >= 0; i--) {
-            let c = cars[i];
-            c.x += c.vx;
-            if(frames % 5 === 0) {
-                exhaustParticles.push({
-                    x: c.vx > 0 ? c.x : c.x + c.w,
-                    y: c.y + c.h - 5,
-                    vx: 0, vy: -0.5, life: 40
-                });
-            }
-            if(player.hurtCooldown === 0 &&
-               player.x < c.x + c.w && player.x + player.w > c.x &&
-               player.y < c.y + c.h && player.y + player.h > c.y) {
-                hurtPlayer(30);
-                spawnParticles(player.x, player.y, '#e74c3c');
+            let c = cars[i]; c.x += c.vx;
+            if(frames % 5 === 0) exhaustParticles.push({ x: c.vx>0?c.x:c.x+c.w, y: c.y+c.h-5, vx: 0, vy: -0.5, life: 40 });
+            if(player.hurtCooldown === 0 && player.x < c.x+c.w && player.x+player.w > c.x && player.y < c.y+c.h && player.y+player.h > c.y) {
+                hurtPlayer(30); spawnParticles(player.x, player.y, '#e74c3c');
             }
             if(c.x < -100 || c.x > width + 100) cars.splice(i, 1);
         }
@@ -600,13 +622,9 @@
                 let dx = target.x - c.x, dy = target.y - c.y;
                 let dist = Math.hypot(dx, dy);
                 c.x += (dx/dist) * c.speed; c.y += (dy/dist) * c.speed;
-                
-                // FLOWER POP LOGIC
                 if(dist < 15) { 
-                    target.active = false; 
-                    lostFlowers++; 
-                    spawnParticles(target.x, target.y, '#7f8c8d'); // Grey Ash
-                    updateHUD(); 
+                    target.active = false; lostFlowers++; 
+                    spawnParticles(target.x, target.y, '#7f8c8d'); updateHUD(); 
                 }
             } else {
                 c.y += Math.sin(frames*0.05)*0.5; c.x += Math.cos(frames*0.05)*0.5;
@@ -614,19 +632,12 @@
             if(player.hurtCooldown === 0) {
                 let pDist = Math.hypot((player.x+player.w/2)-c.x, (player.y+player.h/2)-c.y);
                 if(pDist < c.size + 15) {
-                    hurtPlayer(20);
-                    spawnParticles(player.x, player.y, '#e74c3c');
+                    hurtPlayer(20); spawnParticles(player.x, player.y, '#e74c3c');
                 }
             }
         });
 
-        if(frames % 4 === 0) {
-            smokeParticles.push({
-                x: width * 0.9 + 15 + (Math.random()-0.5)*10, y: groundY - 140,
-                vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1.5 - 0.5,
-                life: 80, size: Math.random()*6+4
-            });
-        }
+        if(frames % 4 === 0) smokeParticles.push({ x: width*0.9+15+(Math.random()-0.5)*10, y: groundY-140, vx: (Math.random()-0.5)*0.5, vy: -Math.random()*1.5-0.5, life: 80, size: Math.random()*6+4 });
 
         flowers = flowers.filter(f => f.active);
         clouds = clouds.filter(c => c.active);
@@ -660,6 +671,10 @@
         ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, width, height);
         drawBackground();
 
+        // Draw Seeds
+        ctx.fillStyle = '#5D4037'; // Brown pixel seed
+        seeds.forEach(s => ctx.fillRect(s.x - 3, s.y - 3, 6, 6));
+
         flowers.forEach(f => {
             let h = f.growth * 40, r = f.growth * 8;
             ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h);
@@ -692,6 +707,7 @@
              ctx.fillRect(p.x, p.y, 4, 4); p.x += p.vx; p.y += p.vy; p.life--;
         });
 
+        drawGardener();
         drawPlayer();
 
         clouds.forEach(c => {
@@ -712,6 +728,22 @@
         rainParticles.forEach(p => {
             ctx.fillRect(p.x, p.y, 2, 10); p.y += p.vy;
         });
+    }
+
+    function drawGardener() {
+        let x = gardener.x, y = gardener.y, w = gardener.w, h = gardener.h;
+        // Head
+        ctx.fillStyle = '#ffdbac'; 
+        ctx.fillRect(x + 5, y, 20, 15);
+        // Torso (Pink top)
+        ctx.fillStyle = '#ff69b4'; 
+        ctx.fillRect(x + 2, y + 15, w - 4, 15);
+        // Skirt (Triangular pink)
+        ctx.beginPath();
+        ctx.moveTo(x - 5, y + h); 
+        ctx.lineTo(x + w + 5, y + h); 
+        ctx.lineTo(x + w / 2, y + 30); 
+        ctx.fill();
     }
 
     function drawPlayer() {
