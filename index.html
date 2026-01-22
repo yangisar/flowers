@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SAMRATTAMA FLOWERS</title>
+    <title>SAMRATTAMA: LEGENDS</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #2c3e50;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA); /* Sky Gradient */
             font-family: 'VT323', monospace;
             touch-action: none;
             user-select: none;
@@ -20,7 +20,7 @@
             display: block;
             width: 100%;
             height: 100%;
-            image-rendering: pixelated;
+            image-rendering: pixelated; /* Crisp pixel art look */
         }
 
         a { color: #f1c40f; text-decoration: none; }
@@ -37,71 +37,76 @@
         .hud-bar {
             padding: 12px 18px;
             display: flex; justify-content: space-between; align-items: flex-start;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
             color: #f1c40f;
             font-size: 22px;
             text-shadow: 2px 2px #000;
-            border-bottom: 2px solid #555;
+            border-bottom: 3px solid #444;
             pointer-events: auto; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         
         .stat-group { display: flex; gap: 15px; }
         .stat-box { display: flex; flex-direction: column; align-items: center; }
-        .stat-label { font-size: 14px; color: #bbb; text-transform: uppercase; }
+        .stat-label { font-size: 14px; color: #ddd; text-transform: uppercase; letter-spacing: 1px; }
         .stat-val { font-size: 28px; font-weight: bold;}
 
         #pm25-box { align-items: flex-start; }
         #pm25-val { font-size: 32px; } 
-        .unit { font-size: 14px; color: #999; }
+        .unit { font-size: 14px; color: #ccc; }
 
         #hp-container {
-            width: 90px; height: 14px;
-            background: #333; border: 2px solid #fff;
-            position: relative; margin-top: 5px;
+            width: 100px; height: 16px;
+            background: #222; border: 2px solid #fff;
+            position: relative; margin-top: 5px; border-radius: 4px; overflow: hidden;
         }
         #hp-fill {
             width: 100%; height: 100%;
-            background-color: #e74c3c;
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
             transition: width 0.2s;
         }
 
         #controls-area {
-            position: absolute; bottom: 40px; width: 100%; height: 180px;
+            position: absolute; bottom: 30px; width: 100%; height: 160px;
             pointer-events: none;
-            display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; align-items: flex-end;
+            display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; align-items: flex-end;
         }
 
         .control-guide {
-            width: 100px; height: 100px;
-            border: 3px dashed rgba(255,255,255,0.3); border-radius: 50%;
+            width: 110px; height: 110px;
+            border: 4px solid rgba(255,255,255,0.4); border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            text-align: center; color: rgba(255,255,255,0.5); font-size: 16px;
-            background: rgba(0,0,0,0.2);
+            text-align: center; color: rgba(255,255,255,0.8); font-size: 18px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
         #attack-indicator {
-            border: 3px solid #e74c3c; background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c; font-weight: bold; font-size: 24px;
+            border-color: #e74c3c; 
+            background: rgba(192, 57, 43, 0.4);
+            color: #fff; font-weight: bold; font-size: 24px;
         }
-        .pressed { background: rgba(231, 76, 60, 0.9) !important; color: white !important; transform: scale(0.95); }
+        .pressed { background: rgba(231, 76, 60, 0.9) !important; transform: scale(0.92); border-color: #fff !important; }
 
         /* SCREENS */
         #menu-screen, #game-over-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(30, 30, 30, 0.98); z-index: 100;
+            background: rgba(20, 30, 40, 0.95); z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             color: white; pointer-events: auto; padding: 20px; box-sizing: border-box;
             text-align: center;
         }
 
-        h1 { font-size: 40px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 5px 0; line-height: 1; }
-        h2 { font-size: 30px; color: #2ecc71; margin: 0 0 15px 0; text-shadow: 2px 2px #000; }
+        h1 { font-size: 48px; color: #f39c12; text-shadow: 4px 4px #c0392b; margin: 0 0 5px 0; line-height: 1; letter-spacing: 2px; }
+        h2 { font-size: 32px; color: #2ecc71; margin: 0 0 15px 0; text-shadow: 2px 2px #000; }
         p { font-size: 18px; color: #bdc3c7; margin: 5px 0; max-width: 400px; }
         
         .rus-text {
             color: #3498db; font-family: monospace; font-size: 16px;
             margin-bottom: 20px; font-weight: bold; background: rgba(0,0,0,0.5);
-            padding: 10px; border-radius: 4px;
+            padding: 12px; border-radius: 6px; border: 1px solid #444;
         }
         
         .share-text {
@@ -110,31 +115,32 @@
         }
 
         input {
-            padding: 10px; font-size: 20px; font-family: 'VT323', monospace;
+            padding: 12px; font-size: 22px; font-family: 'VT323', monospace;
             text-align: center; border: 3px solid #f39c12; background: #222; color: #fff;
-            margin-top: 15px; width: 80%; max-width: 300px; text-transform: uppercase;
+            margin-top: 15px; width: 80%; max-width: 300px; text-transform: uppercase; border-radius: 4px;
         }
 
         button {
-            background: #e74c3c; border: none; border-bottom: 6px solid #c0392b;
-            color: white; font-family: 'VT323', monospace; font-size: 24px;
-            padding: 12px 30px; cursor: pointer; margin-top: 20px; border-radius: 8px;
+            background: linear-gradient(to bottom, #e74c3c, #c0392b); border: none; border-bottom: 5px solid #922b21;
+            color: white; font-family: 'VT323', monospace; font-size: 26px;
+            padding: 12px 40px; cursor: pointer; margin-top: 20px; border-radius: 8px;
+            text-shadow: 1px 1px 0 #000;
         }
-        button:active { transform: translateY(4px); border-bottom: 2px solid #c0392b; }
+        button:active { transform: translateY(4px); border-bottom: 2px solid #922b21; }
 
         #hof-list {
-            margin-top: 15px; width: 100%; max-width: 300px;
-            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
-            max-height: 100px; overflow-y: auto;
+            margin-top: 15px; width: 100%; max-width: 320px;
+            background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px;
+            max-height: 140px; overflow-y: auto; border: 1px solid #555;
         }
         .hof-item {
             display: flex; justify-content: space-between;
-            border-bottom: 1px dashed #555; padding: 5px 0; font-size: 20px;
+            border-bottom: 1px dashed #666; padding: 5px 0; font-size: 20px; color: #eee;
         }
 
         .screen-footer {
             margin-top: auto; padding-top: 20px; font-size: 12px;
-            color: rgba(255,255,255,0.5); font-family: sans-serif;
+            color: rgba(255,255,255,0.4); font-family: sans-serif;
         }
         .screen-footer a { color: #f39c12; font-weight: bold; }
 
@@ -179,8 +185,8 @@
     <div id="menu-screen">
         <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
             <h1>SAMRATTAMA</h1>
-            <h2>FLOWERS</h2>
-            <p class="rus-text">Защити цветы от смога</p>
+            <h2>LEGENDS</h2>
+            <p class="rus-text">Защити цветы от смога. Самрат и Садовник против машин!</p>
             <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
             <button onclick="checkNameAndStart()">START GAME</button>
         </div>
@@ -194,7 +200,7 @@
             <h1 style="color:#e74c3c">GAME OVER</h1>
             <p>The garden was lost.</p>
             
-            <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:4px; margin:10px;">
+            <div style="background:rgba(0,0,0,0.5); padding:15px; border-radius:8px; margin:15px; border:1px solid #555;">
                 <div>FINAL FLOWERS: <span id="end-flowers" style="color:#f1c40f">0</span></div>
                 <div>LOST: <span id="end-lost" style="color:#e74c3c">0</span></div>
                 <div>SMOG CLEARED: <span id="end-cleared" style="color:#95a5a6">0</span></div>
@@ -237,17 +243,21 @@
 
     // Entities
     let player = { 
-        x: 0, y: 0, w: 30, h: 50, 
-        speed: 5, facingRight: true, 
+        x: 0, y: 0, w: 40, h: 70, // Slightly bigger for detail
+        baseSpeed: 5, speed: 5,
+        facingRight: true, 
         attacking: false, attackTimer: 0,
-        health: 100, hurtCooldown: 0 
+        health: 100, hurtCooldown: 0,
+        moving: false,
+        speedBoostTimer: 0
     };
     
-    // The Gardener (Woman in Pink)
     let gardener = {
-        x: 0, y: 0, w: 30, h: 50,
+        x: 0, y: 0, w: 40, h: 70,
         dx: 2, dy: 1,
-        seedTimer: 0, seedInterval: 90 // Plant every ~1.5s
+        seedTimer: 0, seedInterval: 90,
+        facingRight: true,
+        moving: true
     };
     
     let flowers = [];
@@ -255,10 +265,12 @@
     let clouds = [];
     let cars = [];
     let waterDrops = [];
+    let speedBoots = []; // New Item
     let particles = [];
     let smokeParticles = [];
     let exhaustParticles = [];
     let rainParticles = [];
+    let boostParticles = [];
 
     // Inputs
     let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
@@ -330,7 +342,7 @@
         player.attacking = true;
         player.attackTimer = 10; 
 
-        let reach = 60;
+        let reach = 70;
         let cx = player.x + player.w/2 + (player.facingRight ? 20 : -20);
         let cy = player.y + player.h/2;
         
@@ -342,18 +354,15 @@
             if(Math.hypot(cx - c.x, cy - c.y) < c.size + reach) {
                 c.active = false;
                 smogCleared++;
-                spawnParticles(c.x, c.y, '#7f8c8d'); 
+                spawnParticles(c.x, c.y, '#ecf0f1'); 
                 pmLevel = Math.max(35, pmLevel - 15);
                 hitSomething = true;
             }
         });
 
-        // 2. Destroy Cars -> Create Flowers
+        // 2. Destroy Cars
         cars.forEach((c, idx) => {
-            if(
-               cx > c.x - 20 && cx < c.x + c.w + 20 &&
-               cy > c.y - 30 && cy < c.y + c.h + 30
-            ) {
+            if(cx > c.x - 30 && cx < c.x + c.w + 30 && cy > c.y - 40 && cy < c.y + c.h + 40) {
                 cars.splice(idx, 1);
                 smogCleared++; 
                 spawnFlowerAt(c.x + c.w/2, c.y + c.h);
@@ -363,11 +372,16 @@
             }
         });
 
-        // 3. Grab Water Drop
+        // 3. Grab Items (Drops + Boots)
         waterDrops.forEach((w, idx) => {
-             if(Math.hypot(cx - w.x, cy - w.y) < 50) {
-                activateRain();
-                waterDrops.splice(idx, 1);
+             if(Math.hypot(cx - w.x, cy - w.y) < 60) {
+                activateRain(); waterDrops.splice(idx, 1);
+             }
+        });
+        
+        speedBoots.forEach((b, idx) => {
+             if(Math.hypot(cx - b.x, cy - b.y) < 60) {
+                activateSpeedBoost(); speedBoots.splice(idx, 1);
              }
         });
 
@@ -375,28 +389,21 @@
     }
 
     function activateRain() {
-        rainTimer = 180;
-        player.health = 100;
-        pmLevel = 25;
-        
-        clouds.forEach(c => {
-            if(c.active) {
-                c.active = false;
-                smogCleared++;
-                spawnParticles(c.x, c.y, '#7f8c8d');
-            }
-        });
+        rainTimer = 180; player.health = 100; pmLevel = 25;
+        clouds.forEach(c => { if(c.active) { c.active = false; smogCleared++; spawnParticles(c.x, c.y, '#ecf0f1'); }});
         updateHUD();
+    }
+    
+    function activateSpeedBoost() {
+        player.speedBoostTimer = 540; // 9 seconds * 60 frames
+        player.speed = player.baseSpeed * 1.5;
     }
 
     // --- Game Logic ---
 
     function checkNameAndStart() {
         const input = document.getElementById('username');
-        if(input.value.trim() === "") {
-            alert("Please enter a name");
-            return;
-        }
+        if(input.value.trim() === "") { alert("Please enter a name"); return; }
         userName = input.value.trim();
         startGame();
     }
@@ -411,20 +418,17 @@
         document.getElementById('game-over-screen').classList.add('hidden');
         
         activeFlowers = 0; lostFlowers = 0; smogCleared = 0; frames = 0; rainTimer = 0;
-        difficultyFactor = 1.0;
-        pmLevel = 35;
+        difficultyFactor = 1.0; pmLevel = 35;
 
         player.health = 100; player.hurtCooldown = 0;
         player.x = width/2; player.y = groundY + 50;
-        player.attacking = false;
+        player.attacking = false; player.speedBoostTimer = 0; player.speed = player.baseSpeed;
         
-        gardener.x = width*0.7; gardener.y = groundY + 80;
-        gardener.seedTimer = 0;
+        gardener.x = width*0.7; gardener.y = groundY + 80; gardener.seedTimer = 0;
         
-        flowers = []; seeds = []; clouds = []; cars = []; waterDrops = [];
-        particles = []; smokeParticles = []; exhaustParticles = []; rainParticles = [];
+        flowers = []; seeds = []; clouds = []; cars = []; waterDrops = []; speedBoots = [];
+        particles = []; smokeParticles = []; exhaustParticles = []; rainParticles = []; boostParticles = [];
         
-        // No initial flowers, let the gardener plant them
         updateHUD();
         isPlaying = true;
         gameLoop();
@@ -433,25 +437,21 @@
     function gameOver() {
         isPlaying = false;
         document.getElementById('game-over-screen').classList.remove('hidden');
-        
         document.getElementById('end-flowers').innerText = activeFlowers;
         document.getElementById('end-lost').innerText = lostFlowers;
         document.getElementById('end-cleared').innerText = smogCleared;
-
         updateHallOfFame();
     }
 
     function updateHallOfFame() {
         let hof = JSON.parse(localStorage.getItem('samrattama_hof') || '[]');
         let finalScore = smogCleared + (activeFlowers * 2);
-        
         hof.push({ name: userName, score: finalScore });
         hof.sort((a, b) => b.score - a.score);
         hof = hof.slice(0, 5);
         localStorage.setItem('samrattama_hof', JSON.stringify(hof));
-        
         const list = document.getElementById('hof-list');
-        list.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; border-bottom:1px solid #777;">HALL OF FAME (Score)</h3>`;
+        list.innerHTML = `<h3 style="text-align:center; margin:0 0 10px 0; border-bottom:1px solid #777;">HALL OF FAME</h3>`;
         hof.forEach((entry, idx) => {
             list.innerHTML += `<div class="hof-item"><span>${idx+1}. ${entry.name}</span><span>${entry.score}</span></div>`;
         });
@@ -469,10 +469,8 @@
         
         pmLevel += (targetPM - pmLevel) * 0.1;
         let displayPM = Math.floor(pmLevel);
-        
+        document.getElementById('pm-val').innerText = displayPM;
         let pmEl = document.getElementById('pm-val');
-        pmEl.innerText = displayPM;
-        
         if(displayPM < 50) pmEl.style.color = "#2ecc71";
         else if(displayPM < 100) pmEl.style.color = "#f1c40f";
         else if(displayPM < 150) pmEl.style.color = "#e67e22";
@@ -492,59 +490,35 @@
 
     function spawnCloud() {
         if(rainTimer > 0) return;
-        clouds.push({
-            x: Math.random() * width, y: groundY - 150,
-            size: 25, 
-            speed: (Math.random() * 1.5 + 0.5) * difficultyFactor, 
-            active: true
-        });
+        clouds.push({ x: Math.random() * width, y: groundY - 150, size: 25, speed: (Math.random() * 1.5 + 0.5) * difficultyFactor, active: true });
     }
 
     function spawnCar() {
         let fromRight = Math.random() > 0.5;
         let carY = Math.random() * (height - groundY - 60) + groundY + 10;
         let speed = (Math.random() > 0.5 ? 6 : 8) * Math.min(2.5, difficultyFactor); 
-
-        cars.push({
-            x: fromRight ? width + 60 : -60,
-            y: carY,
-            vx: fromRight ? -speed : speed,
-            w: 50, h: 25,
-            color: Math.random() > 0.5 ? '#e74c3c' : '#3498db'
-        });
+        cars.push({ x: fromRight ? width + 80 : -80, y: carY, vx: fromRight ? -speed : speed, w: 80, h: 40, color: Math.random() > 0.5 ? '#e74c3c' : '#3498db' });
     }
 
-    function spawnWaterDrop() {
-        waterDrops.push({
-            x: Math.random() * (width - 60) + 30,
-            y: Math.random() * (height - groundY - 60) + groundY + 30,
-            floatOffset: Math.random() * 100
-        });
-    }
+    function spawnWaterDrop() { waterDrops.push({ x: Math.random() * (width - 60) + 30, y: Math.random() * (height - groundY - 60) + groundY + 30, floatOffset: Math.random() * 100 }); }
+
+    function spawnBoots() { speedBoots.push({ x: Math.random() * (width - 60) + 30, y: Math.random() * (height - groundY - 60) + groundY + 30, floatOffset: Math.random() * 100 }); }
 
     function updateGardener() {
-        // Wander logic
         if (frames % 60 === 0 && Math.random() < 0.5) gardener.dx = (Math.random() - 0.5) * 4;
         if (frames % 60 === 0 && Math.random() < 0.5) gardener.dy = (Math.random() - 0.5) * 2;
-
-        gardener.x += gardener.dx;
-        gardener.y += gardener.dy;
-
-        // Boundaries check
+        gardener.x += gardener.dx; gardener.y += gardener.dy;
+        gardener.facingRight = gardener.dx > 0;
+        
         if (gardener.x < 0 || gardener.x > width - gardener.w) gardener.dx *= -1;
         if (gardener.y < groundY || gardener.y > height - gardener.h) gardener.dy *= -1;
         gardener.x = Math.max(0, Math.min(width - gardener.w, gardener.x));
         gardener.y = Math.max(groundY, Math.min(height - gardener.h, gardener.y));
 
-        // Seeding logic
-        if (flowers.length + seeds.length < 25) { // Cap total plants
+        if (flowers.length + seeds.length < 25) { 
             gardener.seedTimer--;
             if (gardener.seedTimer <= 0) {
-                seeds.push({
-                    x: gardener.x + gardener.w / 2,
-                    y: gardener.y + gardener.h,
-                    life: 120 // Time to grow
-                });
+                seeds.push({ x: gardener.x + gardener.w / 2, y: gardener.y + gardener.h, life: 120 });
                 gardener.seedTimer = gardener.seedInterval;
             }
         }
@@ -555,36 +529,34 @@
         if(player.hurtCooldown > 0) player.hurtCooldown--;
         if(player.attacking) {
             player.attackTimer--;
-            if(player.attackTimer <= 0) {
-                player.attacking = false;
-                document.getElementById('attack-indicator').classList.remove('pressed');
-            }
+            if(player.attackTimer <= 0) { player.attacking = false; document.getElementById('attack-indicator').classList.remove('pressed'); }
         }
         
-        // Difficulty Ramp
-        if(frames % 300 === 0) difficultyFactor += 0.25;
+        // Speed Boost Logic
+        if(player.speedBoostTimer > 0) {
+            player.speedBoostTimer--;
+            if(frames % 5 === 0 && player.moving) {
+                boostParticles.push({x: player.x + player.w/2, y: player.y + player.h, life: 20});
+            }
+            if(player.speedBoostTimer === 0) player.speed = player.baseSpeed;
+        }
 
-        // Gardener & Seeds
+        if(frames % 300 === 0) difficultyFactor += 0.25;
         updateGardener();
         for (let i = seeds.length - 1; i >= 0; i--) {
             seeds[i].life--;
-            if (seeds[i].life <= 0) {
-                spawnFlowerAt(seeds[i].x, seeds[i].y);
-                seeds.splice(i, 1);
-            }
+            if (seeds[i].life <= 0) { spawnFlowerAt(seeds[i].x, seeds[i].y); seeds.splice(i, 1); }
         }
 
-        // Rain Logic
         if(rainTimer > 0) {
             rainTimer--;
-            for(let i=0; i<3; i++) {
-                rainParticles.push({ x: Math.random() * width, y: -20, vx: 0, vy: 15, life: 60 });
-            }
-            clouds.forEach(c => { if(c.active) { c.active = false; smogCleared++; spawnParticles(c.x, c.y, '#7f8c8d'); }});
+            for(let i=0; i<3; i++) rainParticles.push({ x: Math.random() * width, y: -20, vx: 0, vy: 15, life: 60 });
+            clouds.forEach(c => { if(c.active) { c.active = false; smogCleared++; spawnParticles(c.x, c.y, '#ecf0f1'); }});
         }
 
-        // Player Move
+        player.moving = false;
         if(joystick.active) {
+            player.moving = true;
             player.x += Math.max(-player.speed, Math.min(player.speed, joystick.dx * 0.05));
             player.y += Math.max(-player.speed, Math.min(player.speed, joystick.dy * 0.05));
             player.facingRight = joystick.dx >= 0;
@@ -592,7 +564,6 @@
         player.x = Math.max(0, Math.min(width - player.w, player.x));
         player.y = Math.max(groundY, Math.min(height - player.h, player.y));
 
-        // Spawners (Removed automatic flower spawner)
         let cloudRate = Math.max(15, Math.floor(100 / difficultyFactor));
         if(frames % cloudRate === 0) spawnCloud();
         
@@ -600,11 +571,10 @@
         if(frames % carRate === 0) spawnCar(); 
         
         if(frames % 600 === 0) spawnWaterDrop();
+        if(frames % 900 === 0) spawnBoots(); // Spawn boots every ~15s
 
-        // Entities
         flowers.forEach(f => { if(f.active && f.growth < 1) f.growth += 0.01; });
 
-        // Cars
         for(let i = cars.length -1; i >= 0; i--) {
             let c = cars[i]; c.x += c.vx;
             if(frames % 5 === 0) exhaustParticles.push({ x: c.vx>0?c.x:c.x+c.w, y: c.y+c.h-5, vx: 0, vy: -0.5, life: 40 });
@@ -614,7 +584,6 @@
             if(c.x < -100 || c.x > width + 100) cars.splice(i, 1);
         }
 
-        // Clouds
         clouds.forEach(c => {
             if(!c.active) return;
             let target = flowers.find(f => f.active && f.growth > 0.5);
@@ -622,18 +591,13 @@
                 let dx = target.x - c.x, dy = target.y - c.y;
                 let dist = Math.hypot(dx, dy);
                 c.x += (dx/dist) * c.speed; c.y += (dy/dist) * c.speed;
-                if(dist < 15) { 
-                    target.active = false; lostFlowers++; 
-                    spawnParticles(target.x, target.y, '#7f8c8d'); updateHUD(); 
-                }
+                if(dist < 15) { target.active = false; lostFlowers++; spawnParticles(target.x, target.y, '#7f8c8d'); updateHUD(); }
             } else {
                 c.y += Math.sin(frames*0.05)*0.5; c.x += Math.cos(frames*0.05)*0.5;
             }
             if(player.hurtCooldown === 0) {
                 let pDist = Math.hypot((player.x+player.w/2)-c.x, (player.y+player.h/2)-c.y);
-                if(pDist < c.size + 15) {
-                    hurtPlayer(20); spawnParticles(player.x, player.y, '#e74c3c');
-                }
+                if(pDist < c.size + 15) { hurtPlayer(20); spawnParticles(player.x, player.y, '#e74c3c'); }
             }
         });
 
@@ -645,153 +609,303 @@
         smokeParticles = smokeParticles.filter(p => p.life > 0);
         exhaustParticles = exhaustParticles.filter(p => p.life > 0);
         rainParticles = rainParticles.filter(p => p.y < height);
+        boostParticles = boostParticles.filter(p => p.life > 0);
 
         updateHUD();
     }
 
     function hurtPlayer(dmg) {
-        player.health -= dmg;
-        player.hurtCooldown = 60;
-        updateHUD();
+        player.health -= dmg; player.hurtCooldown = 60; updateHUD();
         if(player.health <= 0) gameOver();
     }
 
     function spawnParticles(x, y, color) {
-        for(let i=0; i<15; i++) {
-            particles.push({
-                x: x, y: y,
-                vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12,
-                color: color, life: 25, size: 5
-            });
-        }
+        for(let i=0; i<15; i++) particles.push({ x: x, y: y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, color: color, life: 25, size: 5 });
     }
 
-    // --- Draw ---
+    // --- DRAWING FUNCTIONS (MAX LEVEL) ---
+
     function draw() {
-        ctx.fillStyle = '#2c3e50'; ctx.fillRect(0, 0, width, height);
+        ctx.clearRect(0,0,width,height);
         drawBackground();
 
-        // Draw Seeds
-        ctx.fillStyle = '#5D4037'; // Brown pixel seed
-        seeds.forEach(s => ctx.fillRect(s.x - 3, s.y - 3, 6, 6));
+        // Seeds
+        ctx.fillStyle = '#5D4037'; seeds.forEach(s => ctx.fillRect(s.x - 3, s.y - 3, 6, 6));
 
+        // Flowers (Detailed)
         flowers.forEach(f => {
-            let h = f.growth * 40, r = f.growth * 8;
-            ctx.fillStyle = '#006400'; ctx.fillRect(f.x-2, f.y-h, 4, h);
+            let h = f.growth * 40;
+            // Stem
+            ctx.fillStyle = '#2ecc71'; ctx.fillRect(f.x-2, f.y-h, 4, h);
+            // Leaves
+            if(f.growth > 0.5) {
+                ctx.beginPath(); ctx.ellipse(f.x-5, f.y-h/2, 6, 3, -0.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(f.x+5, f.y-h/2, 6, 3, 0.5, 0, Math.PI*2); ctx.fill();
+            }
+            // Petals
             if(f.growth > 0.2) {
                 ctx.fillStyle = f.color;
-                for(let i=0; i<5; i++) {
-                    let a = (i*Math.PI*2)/5;
+                for(let i=0; i<6; i++) {
+                    let a = (i*Math.PI*2)/6 + frames*0.02;
+                    let r = f.growth * 10;
                     ctx.beginPath(); ctx.arc(f.x + Math.cos(a)*r, (f.y-h) + Math.sin(a)*r, r*0.8, 0, Math.PI*2); ctx.fill();
                 }
-                ctx.fillStyle = '#ffe'; ctx.beginPath(); ctx.arc(f.x, f.y-h, r*0.5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.arc(f.x, f.y-h, f.growth*5, 0, Math.PI*2); ctx.fill();
             }
         });
 
-        ctx.fillStyle = '#3498db';
-        waterDrops.forEach(w => {
-            let yOffset = Math.sin((frames + w.floatOffset) * 0.05) * 5;
-            let cx = w.x, cy = w.y + yOffset;
-            ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI, false); ctx.lineTo(cx, cy - 15); ctx.fill();
-            ctx.fillStyle = 'white'; ctx.fillRect(cx - 3, cy - 3, 2, 2); ctx.fillStyle = '#3498db';
-        });
+        // Items
+        drawItems();
 
+        // Cars (Detailed)
         cars.forEach(c => {
-            ctx.fillStyle = c.color; ctx.fillRect(c.x, c.y, c.w, c.h);
-            ctx.fillStyle = '#ecf0f1'; ctx.fillRect(c.x + 5, c.y - 10, c.w - 10, 10);
-            ctx.fillStyle = '#000'; ctx.fillRect(c.x + 5, c.y + c.h - 5, 10, 10); ctx.fillRect(c.x + c.w - 15, c.y + c.h - 5, 10, 10);
-        });
-
-        ctx.fillStyle = '#7f8c8d';
-        exhaustParticles.forEach(p => {
-             ctx.fillRect(p.x, p.y, 4, 4); p.x += p.vx; p.y += p.vy; p.life--;
+            // Body
+            ctx.fillStyle = c.color; 
+            ctx.beginPath(); ctx.roundRect(c.x, c.y, c.w, c.h, 5); ctx.fill();
+            // Roof
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.beginPath(); ctx.roundRect(c.x + 10, c.y - 12, c.w - 20, 15, [5,5,0,0]); ctx.fill();
+            // Windows
+            ctx.fillStyle = '#87CEEB'; 
+            ctx.fillRect(c.x + 12, c.y - 8, 20, 8); 
+            ctx.fillRect(c.x + c.w - 32, c.y - 8, 20, 8);
+            // Wheels
+            ctx.fillStyle = '#000'; 
+            ctx.beginPath(); ctx.arc(c.x + 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(c.x + c.w - 15, c.y + c.h, 9, 0, Math.PI*2); ctx.fill();
+            // Hubcaps
+            ctx.fillStyle = '#95a5a6';
+            ctx.beginPath(); ctx.arc(c.x + 15, c.y + c.h, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(c.x + c.w - 15, c.y + c.h, 4, 0, Math.PI*2); ctx.fill();
+            // Lights
+            ctx.fillStyle = c.vx > 0 ? '#f1c40f' : '#c0392b';
+            ctx.fillRect(c.vx > 0 ? c.x + c.w - 5 : c.x, c.y + 10, 5, 10);
         });
 
         drawGardener();
         drawPlayer();
 
+        // Clouds (Fluffy)
         clouds.forEach(c => {
-            ctx.fillStyle = '#bdc3c7';
-            ctx.beginPath(); ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
-            ctx.arc(c.x-c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
-            ctx.arc(c.x+c.size*0.6, c.y+c.size*0.3, c.size*0.7, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(189, 195, 199, 0.9)';
+            ctx.beginPath(); 
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI*2); 
+            ctx.arc(c.x-c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2);
+            ctx.arc(c.x+c.size*0.7, c.y+c.size*0.2, c.size*0.8, 0, Math.PI*2);
+            ctx.arc(c.x, c.y-c.size*0.5, c.size*0.8, 0, Math.PI*2);
             ctx.fill();
+            // Face
             ctx.fillStyle = '#2c3e50';
-            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5); ctx.fillRect(c.x-6, c.y+10, 12, 3);
+            ctx.fillRect(c.x-8, c.y, 5, 5); ctx.fillRect(c.x+3, c.y, 5, 5); 
+            ctx.fillRect(c.x-6, c.y+12, 12, 3);
         });
 
-        particles.forEach(p => {
-            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); p.x += p.vx; p.y += p.vy; p.life--;
-        });
+        // Particles
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size); p.x += p.vx; p.y += p.vy; p.life--; });
+        exhaustParticles.forEach(p => { ctx.fillStyle = `rgba(127, 140, 141, ${p.life/40})`; ctx.fillRect(p.x, p.y, 6, 6); p.x += p.vx; p.y += p.vy; p.life--; });
+        boostParticles.forEach(p => { ctx.fillStyle = `rgba(241, 196, 15, ${p.life/20})`; ctx.fillRect(p.x, p.y, 8, 8); p.life--; });
+        ctx.fillStyle = '#3498db'; rainParticles.forEach(p => { ctx.fillRect(p.x, p.y, 2, 10); p.y += p.vy; });
+    }
 
+    function drawItems() {
+        // Water
         ctx.fillStyle = '#3498db';
-        rainParticles.forEach(p => {
-            ctx.fillRect(p.x, p.y, 2, 10); p.y += p.vy;
+        waterDrops.forEach(w => {
+            let y = w.y + Math.sin((frames + w.floatOffset) * 0.05) * 5;
+            ctx.beginPath(); ctx.arc(w.x, y, 12, 0, Math.PI, false); ctx.lineTo(w.x, y - 18); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.fillRect(w.x - 4, y - 6, 3, 3); ctx.fillStyle = '#3498db';
+        });
+
+        // Boots (Flask)
+        speedBoots.forEach(b => {
+            let y = b.y + Math.sin((frames + b.floatOffset) * 0.1) * 5;
+            // Glow
+            ctx.shadowBlur = 10; ctx.shadowColor = '#f1c40f';
+            ctx.fillStyle = '#e67e22';
+            // Boot Shape
+            ctx.beginPath();
+            ctx.moveTo(b.x - 10, y - 15);
+            ctx.lineTo(b.x + 5, y - 15);
+            ctx.lineTo(b.x + 5, y + 5);
+            ctx.lineTo(b.x + 15, y + 5);
+            ctx.lineTo(b.x + 15, y + 15);
+            ctx.lineTo(b.x - 10, y + 15);
+            ctx.closePath();
+            ctx.fill();
+            // Wing
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.moveTo(b.x - 5, y - 5); ctx.lineTo(b.x - 15, y - 15); ctx.lineTo(b.x - 5, y - 10); ctx.fill();
+            ctx.shadowBlur = 0;
         });
     }
 
-    function drawGardener() {
-        let x = gardener.x, y = gardener.y, w = gardener.w, h = gardener.h;
+    // --- ANIMATED CHARACTER DRAWING ---
+    
+    function drawHuman(x, y, w, h, colorBody, colorHead, isMoving, facingRight, isGardener) {
+        let cx = x + w/2;
+        let legOffset = 0;
+        let armOffset = 0;
+        
+        if (isMoving) {
+            legOffset = Math.sin(frames * 0.2) * 8;
+            armOffset = Math.cos(frames * 0.2) * 8;
+        }
+
+        ctx.save();
+        
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.ellipse(cx, y + h, w/1.5, 5, 0, 0, Math.PI*2); ctx.fill();
+
+        // Legs
+        if (!isGardener) { // Samrat Legs
+            ctx.fillStyle = '#5D4037'; // Pants
+            ctx.fillRect(cx - 12 - (facingRight?legOffset:-legOffset), y + h - 25, 10, 25); // Back leg
+            ctx.fillRect(cx + 2 + (facingRight?legOffset:-legOffset), y + h - 25, 10, 25); // Front leg
+        } else { // Gardener Legs (Peeking)
+            ctx.fillStyle = '#D2B48C'; // Skin
+            ctx.fillRect(cx - 10 + legOffset, y + h - 10, 8, 10);
+            ctx.fillRect(cx + 2 - legOffset, y + h - 10, 8, 10);
+        }
+
+        // Body
+        ctx.fillStyle = colorBody;
+        if(isGardener) {
+            // Dress Top
+            ctx.fillRect(x + 5, y + 20, w - 10, 25);
+            // Skirt (Triangle)
+            ctx.beginPath();
+            ctx.moveTo(x, y + 45);
+            ctx.lineTo(x + w, y + 45);
+            ctx.lineTo(x + w/2 + (Math.sin(frames*0.1)*2), y + h - 5);
+            ctx.fill();
+        } else {
+            // Samrat Shirt
+            ctx.fillRect(x, y + 20, w, 35);
+            // Belt
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(x, y + 50, w, 5);
+        }
+
         // Head
-        ctx.fillStyle = '#ffdbac'; 
-        ctx.fillRect(x + 5, y, 20, 15);
-        // Torso (Pink top)
-        ctx.fillStyle = '#ff69b4'; 
-        ctx.fillRect(x + 2, y + 15, w - 4, 15);
-        // Skirt (Triangular pink)
-        ctx.beginPath();
-        ctx.moveTo(x - 5, y + h); 
-        ctx.lineTo(x + w + 5, y + h); 
-        ctx.lineTo(x + w / 2, y + 30); 
-        ctx.fill();
+        ctx.fillStyle = colorHead; // Skin
+        ctx.fillRect(cx - 10, y, 20, 20);
+        
+        // Hair/Face features
+        if(isGardener) {
+            ctx.fillStyle = '#3e2723'; // Dark Hair
+            ctx.fillRect(cx - 12, y - 5, 24, 10);
+            ctx.fillRect(cx - 12, y, 6, 20); // Long hair side
+            ctx.fillRect(cx + 6, y, 6, 20); // Long hair side
+        } else {
+            ctx.fillStyle = '#2c3e50'; // Hero Hair
+            ctx.fillRect(cx - 10, y, 20, 6);
+            ctx.fillStyle = '#e74c3c'; // Bandana
+            ctx.fillRect(cx - 10, y + 6, 20, 4);
+            if(facingRight) ctx.fillRect(cx - 15, y+6, 5, 4); // Knot
+        }
+
+        // Arms
+        ctx.fillStyle = colorHead; // Skin arms
+        if(isGardener) {
+            // Planting animation
+            let plantY = Math.abs(Math.sin(frames*0.1)) * 5;
+            ctx.fillRect(cx - 15, y + 25 + plantY, 8, 15);
+            ctx.fillRect(cx + 7, y + 25 + plantY, 8, 15);
+        } else {
+            // Hero Arms
+            // Back arm
+            ctx.fillRect(cx - 15 + (facingRight?armOffset:-armOffset), y + 25, 8, 20);
+            
+            // Front Arm + Sword
+            ctx.save();
+            let frontArmX = cx + 5 + (facingRight?-armOffset:armOffset);
+            ctx.translate(frontArmX, y + 25);
+            
+            if(player.attacking) {
+                // Swing rotation
+                let swingAngle = (Math.PI/2) * (player.attackTimer/10) * (facingRight ? 1 : -1);
+                ctx.rotate(swingAngle - Math.PI/4);
+            }
+
+            ctx.fillRect(0, 0, 8, 20); // Arm
+            
+            // Sword Logic attached to hand
+            if(player.attacking || !player.attacking) {
+                 ctx.translate(4, 18);
+                 if(!facingRight) ctx.scale(-1, 1);
+                 
+                 // Sword
+                 ctx.fillStyle = '#95a5a6'; // Guard
+                 ctx.fillRect(-6, 0, 12, 4);
+                 ctx.fillStyle = '#bdc3c7'; // Blade
+                 ctx.fillRect(-2, 4, 4, 30);
+                 
+                 // Swish Effect
+                 if(player.attacking) {
+                     ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+                     ctx.lineWidth = 3;
+                     ctx.beginPath();
+                     ctx.arc(0, 0, 40, 0, Math.PI, false);
+                     ctx.stroke();
+                 }
+            }
+            ctx.restore();
+        }
+
+        ctx.restore();
+    }
+
+    function drawGardener() {
+        drawHuman(gardener.x, gardener.y, gardener.w, gardener.h, '#e91e63', '#ffccbc', true, gardener.facingRight, true);
     }
 
     function drawPlayer() {
         if(player.hurtCooldown > 0 && frames%4 < 2) return;
-        let x = player.x, y = player.y, w = player.w, h = player.h;
-        
-        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, y+h-5, w, 5);
-        ctx.fillStyle = '#D2B48C'; ctx.fillRect(x, y, w, h);
-        ctx.fillStyle = '#5D4037'; ctx.fillRect(x+w/2-2, y+15, 4, 4); ctx.fillRect(x+w/2-2, y+25, 4, 4);
-        ctx.fillStyle = '#ffcc99'; ctx.fillRect(x+2, y-15, w-4, 15);
-        ctx.fillStyle = '#8B4513'; ctx.fillRect(x-5, y-15, w+10, 6); ctx.fillRect(x, y-25, w, 10);
-        
-        // Draw Sword
-        if(player.attacking) {
-             ctx.save();
-             ctx.translate(x + w/2, y + h/2);
-             if(!player.facingRight) ctx.scale(-1, 1);
-             
-             // Simple Swish (White Line Arc)
-             ctx.strokeStyle = '#fff';
-             ctx.lineWidth = 4;
-             ctx.beginPath();
-             ctx.arc(20, 0, 35, -Math.PI/3, Math.PI/3);
-             ctx.stroke();
-
-             // Sword blade
-             ctx.fillStyle = '#bdc3c7'; // Silver
-             ctx.fillRect(15, -5, 30, 8);
-             ctx.fillStyle = '#34495e'; // Handle
-             ctx.fillRect(5, -5, 10, 8);
-
-             ctx.restore();
-        } else {
-             // Sword Idle
-             ctx.fillStyle = '#95a5a6';
-             ctx.fillRect(player.facingRight ? x+w-5 : x-5, y+20, 4, 20); 
-        }
+        drawHuman(player.x, player.y, player.w, player.h, '#f39c12', '#ffccbc', player.moving, player.facingRight, false);
     }
 
     function drawBackground() {
-        ctx.fillStyle = '#34495e'; ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(width*0.2, groundY-150); ctx.lineTo(width*0.5, groundY-80); ctx.lineTo(width*0.8, groundY-180); ctx.lineTo(width, groundY-100); ctx.lineTo(width, groundY); ctx.fill();
-        ctx.fillStyle = '#27ae60'; ctx.fillRect(0, groundY, width, height-groundY);
+        // Sky Gradient
+        let grd = ctx.createLinearGradient(0, 0, 0, height);
+        grd.addColorStop(0, "#87CEEB");
+        grd.addColorStop(0.6, "#E0F7FA");
+        grd.addColorStop(0.6, "#27ae60"); // Ground line
+        grd.addColorStop(1, "#2ecc71");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, width, height);
         
-        let hX = width*0.75; ctx.fillStyle = '#95a5a6'; ctx.fillRect(hX, groundY-200, 50, 200); ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(hX, groundY-200); ctx.lineTo(hX+25, groundY-220); ctx.lineTo(hX+50, groundY-200); ctx.fill();
-        let hillX = width * 0.2; ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.ellipse(hillX, groundY, 100, 80, 0, Math.PI, 0); ctx.fill();
-        let towerX = hillX - 20; ctx.fillStyle = '#7f8c8d'; ctx.fillRect(towerX - 4, groundY - 250, 8, 180); ctx.beginPath(); ctx.arc(towerX, groundY - 180, 15, 0, Math.PI*2); ctx.fill();
-        let pX = width*0.9; ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
-        smokeParticles.forEach(p => { ctx.fillStyle = '#7f8c8d'; ctx.fillRect(p.x, p.y, p.size, p.size); p.x += p.vx; p.y += p.vy; p.life--; });
+        // Mountains (Parallax)
+        ctx.fillStyle = 'rgba(44, 62, 80, 0.3)';
+        ctx.beginPath();
+        ctx.moveTo(0, groundY);
+        for(let i=0; i<=width; i+=50) {
+            ctx.lineTo(i, groundY - 100 - Math.sin(i*0.01 + frames*0.001)*50);
+        }
+        ctx.lineTo(width, groundY);
+        ctx.fill();
+
+        // City Silhouette
+        ctx.fillStyle = 'rgba(52, 73, 94, 0.5)';
+        for(let i=0; i<width; i+=40) {
+            let h = 20 + Math.sin(i*123)*20 + 30;
+            ctx.fillRect(i, groundY - h, 45, h);
+        }
+
+        // TV Tower (Almaty)
+        let tx = width * 0.2;
+        ctx.fillStyle = '#7f8c8d'; 
+        ctx.fillRect(tx - 3, groundY - 220, 6, 220); // Spire
+        ctx.beginPath(); ctx.ellipse(tx, groundY - 150, 20, 10, 0, 0, Math.PI*2); ctx.fill(); // Pod
+
+        // Smoke Stack
+        let pX = width*0.9; 
+        ctx.fillStyle = '#555'; ctx.fillRect(pX, groundY-120, 30, 120);
+        smokeParticles.forEach(p => { 
+            ctx.fillStyle = `rgba(127, 140, 141, ${p.life/100})`; 
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); 
+            p.x += p.vx; p.y += p.vy; p.life--; 
+        });
     }
 
     function gameLoop() {
