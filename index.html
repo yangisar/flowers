@@ -1,30 +1,1559 @@
-I'll analyze the game and create an enhanced version with improved graphics and bug fixes.I've created an enhanced version of SAMRATTAMA: LEGENDS with significant improvements:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAMRATTAMA: LEGENDS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
-## Graphics Enhancements:
-- **Gradient effects** on all major elements (cars, buildings, characters, items)
-- **Shadow and glow effects** (flowers, power-ups, attacks, particles)
-- **Particle improvements** with alpha blending and gravity
-- **Enhanced UI** with better shadows, borders, and visual feedback
-- **Building windows** with randomized lighting
-- **Smoother animations** and visual polish throughout
-- **Better color schemes** with depth and shading
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-## Bug Fixes:
-- Fixed mouse/touch event listeners to properly check `isPlaying` state
-- Fixed cloud removal (now properly splices inactive clouds)
-- Fixed player positioning on resize
-- Fixed speed boost UI indicator removal
-- Improved collision detection accuracy
-- Fixed particle lifecycle management
-- Better health clamping (can't go below 0)
-- Improved joystick control responsiveness
+        body {
+            overflow: hidden;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+            font-family: 'VT323', monospace;
+            touch-action: none;
+            user-select: none;
+            position: relative;
+        }
 
-## Additional Improvements:
-- Better responsive design
-- Enhanced visual feedback for all interactions
-- Improved Hall of Fame with medal colors
-- Better CSS animations and transitions
-- More polished control indicators
-- Enhanced rain and speed boost effects
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
 
-The game now has a much more polished, professional look with smooth animations and rich visual effects!
+        a { color: #f1c40f; text-decoration: none; }
+
+        /* UI LAYOUT */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            z-index: 10;
+        }
+
+        .hud-bar {
+            padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.7) 100%);
+            backdrop-filter: blur(8px);
+            color: #f1c40f;
+            font-size: 22px;
+            text-shadow: 2px 2px 4px #000, 0 0 10px rgba(241, 196, 15, 0.5);
+            border-bottom: 3px solid rgba(241, 196, 15, 0.3);
+            pointer-events: auto; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        
+        .stat-group { display: flex; gap: 20px; flex-wrap: wrap; }
+        .stat-box { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-label { 
+            font-size: 14px; 
+            color: #ddd; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .stat-val { 
+            font-size: 28px; 
+            font-weight: bold;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        #pm25-box { align-items: flex-start; }
+        #pm25-val { 
+            font-size: 32px;
+            animation: pulse 2s ease-in-out infinite;
+        } 
+        .unit { font-size: 14px; color: #ccc; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        #hp-container {
+            width: 120px; height: 20px;
+            background: linear-gradient(180deg, #1a1a1a, #000);
+            border: 2px solid #fff;
+            position: relative; 
+            margin-top: 5px; 
+            border-radius: 6px; 
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        #hp-fill {
+            width: 100%; 
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.8);
+            position: relative;
+        }
+        #hp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+        }
+
+        #controls-area {
+            position: absolute; 
+            bottom: 30px; 
+            width: 100%; 
+            height: 180px;
+            pointer-events: none;
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 40px; 
+            box-sizing: border-box; 
+            align-items: flex-end;
+        }
+
+        .control-guide {
+            width: 120px; 
+            height: 120px;
+            border: 4px solid rgba(255,255,255,0.5); 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            text-align: center; 
+            color: rgba(255,255,255,0.9); 
+            font-size: 18px;
+            background: radial-gradient(circle, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 2px 10px rgba(255,255,255,0.1);
+            transition: all 0.2s ease;
+        }
+
+        #attack-indicator {
+            border-color: #e74c3c; 
+            background: radial-gradient(circle, rgba(231, 76, 60, 0.6), rgba(192, 57, 43, 0.4));
+            color: #fff; 
+            font-weight: bold; 
+            font-size: 26px;
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.8), inset 0 2px 10px rgba(255,255,255,0.2);
+        }
+        .pressed { 
+            background: radial-gradient(circle, rgba(231, 76, 60, 1), rgba(192, 57, 43, 0.8)) !important; 
+            transform: scale(0.9); 
+            border-color: #fff !important;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 1) !important;
+        }
+
+        /* SCREENS */
+        #menu-screen, #game-over-screen {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: linear-gradient(135deg, rgba(20, 30, 40, 0.98), rgba(44, 62, 80, 0.95)); 
+            z-index: 100;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            color: white; 
+            pointer-events: auto; 
+            padding: 20px; 
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 { 
+            font-size: 56px; 
+            color: #f39c12; 
+            text-shadow: 4px 4px 0 #c0392b, 8px 8px 20px rgba(0,0,0,0.8); 
+            margin: 0 0 5px 0; 
+            line-height: 1; 
+            letter-spacing: 3px;
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 4px 4px 0 #c0392b, 8px 8px 20px rgba(0,0,0,0.8); }
+            50% { text-shadow: 4px 4px 0 #c0392b, 8px 8px 30px rgba(243, 156, 18, 0.6); }
+        }
+        
+        h2 { 
+            font-size: 36px; 
+            color: #2ecc71; 
+            margin: 0 0 20px 0; 
+            text-shadow: 2px 2px 4px #000, 0 0 15px rgba(46, 204, 113, 0.5);
+        }
+        
+        p { 
+            font-size: 18px; 
+            color: #bdc3c7; 
+            margin: 5px 0; 
+            max-width: 450px;
+            line-height: 1.4;
+        }
+        
+        .rus-text {
+            color: #3498db; 
+            font-family: monospace; 
+            font-size: 16px;
+            margin-bottom: 20px; 
+            font-weight: bold; 
+            background: rgba(0,0,0,0.6);
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        
+        .share-text {
+            margin-top: 15px; 
+            font-size: 16px; 
+            color: #f1c40f;
+            border-top: 1px dashed #555; 
+            padding-top: 15px;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        input {
+            padding: 14px; 
+            font-size: 24px; 
+            font-family: 'VT323', monospace;
+            text-align: center; 
+            border: 3px solid #f39c12; 
+            background: linear-gradient(180deg, #2c3e50, #1a1a1a); 
+            color: #fff;
+            margin-top: 20px; 
+            width: 85%; 
+            max-width: 350px; 
+            text-transform: uppercase; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 2px 5px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #e74c3c;
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.6), inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        button {
+            background: linear-gradient(180deg, #e74c3c, #c0392b); 
+            border: none; 
+            border-bottom: 5px solid #922b21;
+            color: white; 
+            font-family: 'VT323', monospace; 
+            font-size: 28px;
+            padding: 14px 50px; 
+            cursor: pointer; 
+            margin-top: 25px; 
+            border-radius: 10px;
+            text-shadow: 2px 2px 4px #000;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: linear-gradient(180deg, #ec7063, #e74c3c);
+            box-shadow: 0 6px 25px rgba(231, 76, 60, 0.6);
+        }
+        button:active { 
+            transform: translateY(4px); 
+            border-bottom: 2px solid #922b21;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+
+        #hof-list {
+            margin-top: 20px; 
+            width: 100%; 
+            max-width: 360px;
+            background: rgba(0,0,0,0.5); 
+            padding: 18px; 
+            border-radius: 10px;
+            max-height: 160px; 
+            overflow-y: auto; 
+            border: 2px solid rgba(241, 196, 15, 0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .hof-item {
+            display: flex; 
+            justify-content: space-between;
+            border-bottom: 1px dashed #666; 
+            padding: 8px 0; 
+            font-size: 22px; 
+            color: #eee;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .hof-item:last-child {
+            border-bottom: none;
+        }
+
+        .screen-footer {
+            margin-top: auto; 
+            padding-top: 25px; 
+            font-size: 13px;
+            color: rgba(255,255,255,0.5); 
+            font-family: sans-serif;
+        }
+        .screen-footer a { 
+            color: #f39c12; 
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+        .screen-footer a:hover {
+            color: #e74c3c;
+        }
+
+        .hidden { display: none !important; }
+        
+        /* Speed boost indicator */
+        .speed-boost-active {
+            animation: speedPulse 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes speedPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="hud-bar">
+            <div class="stat-box" id="pm25-box">
+                <span class="stat-label">AIR (PM2.5)</span>
+                <div><span class="stat-val" id="pm-val">35</span><span class="unit">µg/m³</span></div>
+            </div>
+
+            <div class="stat-group">
+                <div class="stat-box">
+                    <span class="stat-label">FLOWERS</span>
+                    <span class="stat-val" id="flower-count">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">LOST</span>
+                    <span class="stat-val" id="lost" style="color:#e74c3c">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">CLEARED</span>
+                    <span class="stat-val" id="smog-cleared" style="color:#95a5a6">0</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">HP</span>
+                    <div id="hp-container"><div id="hp-fill"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="controls-area">
+            <div class="control-guide">MOVE<br>(Drag)</div>
+            <div class="control-guide" id="attack-indicator">⚔️<br>ATTACK</div>
+        </div>
+    </div>
+
+    <div id="menu-screen">
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+            <h1>SAMRATTAMA</h1>
+            <h2>LEGENDS</h2>
+            <p class="rus-text">Защити цветы от смога. Самрат и Садовник против машин!</p>
+            <input type="text" id="username" placeholder="YOUR NAME / ИМЯ" maxlength="10">
+            <button onclick="checkNameAndStart()">START GAME</button>
+        </div>
+        <div class="screen-footer">
+            Created using AI tools by Yadykar Ibraimov <a href="https://www.instagram.com/yangisar/" target="_blank">@yangisar</a>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+            <h1 style="color:#e74c3c">GAME OVER</h1>
+            <p>The garden was lost.</p>
+            
+            <div style="background:rgba(0,0,0,0.6); padding:20px; border-radius:10px; margin:20px; border:2px solid rgba(231, 76, 60, 0.5); box-shadow: 0 4px 20px rgba(0,0,0,0.6);">
+                <div style="margin:8px 0;">FINAL FLOWERS: <span id="end-flowers" style="color:#f1c40f">0</span></div>
+                <div style="margin:8px 0;">LOST: <span id="end-lost" style="color:#e74c3c">0</span></div>
+                <div style="margin:8px 0;">SMOG CLEARED: <span id="end-cleared" style="color:#95a5a6">0</span></div>
+            </div>
+
+            <div id="hof-list"></div>
+            
+            <div class="share-text">
+                Share your results online<br>
+                Сделай скриншот и поделись результатами в сети и отмечай нас=))
+            </div>
+
+            <button onclick="resetGame()">PLAY AGAIN</button>
+        </div>
+        <div class="screen-footer">
+            Created using AI tools by Yadykar Ibraimov <a href="https://www.instagram.com/yangisar/" target="_blank">@yangisar</a>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // --- State & Config ---
+    let width, height, groundY;
+    let isPlaying = false;
+    let animationId;
+    let frames = 0;
+    let difficultyFactor = 1.0;
+    
+    // Player Data
+    let userName = "Hero";
+    let activeFlowers = 0;
+    let lostFlowers = 0;
+    let smogCleared = 0; 
+    let rainTimer = 0; 
+    let pmLevel = 35;
+
+    // Entities
+    let player = { 
+        x: 0, y: 0, w: 30, h: 70, 
+        baseSpeed: 5, speed: 5,
+        facingRight: true, 
+        attacking: false, attackTimer: 0,
+        health: 100, maxHealth: 100, hurtCooldown: 0,
+        moving: false,
+        speedBoostTimer: 0
+    };
+    
+    let gardener = {
+        x: 0, y: 0, w: 40, h: 70,
+        dx: 2, dy: 1,
+        seedTimer: 0, seedInterval: 90,
+        facingRight: true,
+        moving: true
+    };
+    
+    let flowers = [];
+    let seeds = [];
+    let clouds = [];
+    let cars = [];
+    let waterDrops = [];
+    let speedBoots = [];
+    let particles = [];
+    let smokeParticles = [];
+    let exhaustParticles = [];
+    let rainParticles = [];
+    let boostParticles = [];
+
+    // Inputs
+    let joystick = { active: false, startX: 0, startY: 0, dx: 0, dy: 0, touchId: null };
+
+    // --- Setup ---
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        groundY = height * 0.40; 
+        if(!isPlaying) { 
+            player.x = width/2 - player.w/2; 
+            player.y = groundY + 50; 
+            gardener.x = width*0.7; 
+            gardener.y = groundY + 80;
+        }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- Inputs ---
+    const handleStart = (x, y, id) => {
+        if(x < width/2) {
+            joystick.active = true; 
+            joystick.startX = x; 
+            joystick.startY = y; 
+            joystick.touchId = id;
+        } else {
+            attack();
+        }
+    };
+
+    canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        if(!isPlaying) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            handleStart(t.clientX, t.clientY, t.identifier);
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if(!isPlaying) return;
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            if (joystick.active && t.identifier === joystick.touchId) {
+                joystick.dx = t.clientX - joystick.startX; 
+                joystick.dy = t.clientY - joystick.startY;
+            }
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', e => {
+        e.preventDefault();
+        for (let i = 0; i < e.changedTouches.length; i++) {
+            let t = e.changedTouches[i];
+            if (t.identifier === joystick.touchId) {
+                joystick.active = false; 
+                joystick.dx = 0; 
+                joystick.dy = 0;
+            } else {
+                document.getElementById('attack-indicator').classList.remove('pressed');
+            }
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('mousedown', e => {
+        if(!isPlaying) return;
+        handleStart(e.clientX, e.clientY, 'mouse');
+    });
+    
+    canvas.addEventListener('mousemove', e => { 
+        if(joystick.active && joystick.touchId === 'mouse') { 
+            joystick.dx = e.clientX - joystick.startX; 
+            joystick.dy = e.clientY - joystick.startY; 
+        }
+    });
+    
+    canvas.addEventListener('mouseup', () => { 
+        if(joystick.touchId === 'mouse') {
+            joystick.active = false; 
+            joystick.dx = 0; 
+            joystick.dy = 0; 
+        }
+        document.getElementById('attack-indicator').classList.remove('pressed'); 
+    });
+
+    // --- Combat Logic ---
+    function attack() {
+        if(!isPlaying || player.attacking) return;
+        
+        document.getElementById('attack-indicator').classList.add('pressed');
+        player.attacking = true;
+        player.attackTimer = 10; 
+
+        let reach = 70;
+        let cx = player.x + player.w/2 + (player.facingRight ? 20 : -20);
+        let cy = player.y + player.h/2;
+        
+        let hitSomething = false;
+
+        // 1. Clear Smog
+        for(let i = clouds.length - 1; i >= 0; i--) {
+            let c = clouds[i];
+            if(!c.active) continue;
+            if(Math.hypot(cx - c.x, cy - c.y) < c.size + reach) {
+                c.active = false;
+                smogCleared++;
+                spawnParticles(c.x, c.y, '#ecf0f1', 20); 
+                pmLevel = Math.max(35, pmLevel - 15);
+                hitSomething = true;
+            }
+        }
+
+        // 2. Destroy Cars
+        for(let i = cars.length - 1; i >= 0; i--) {
+            let c = cars[i];
+            if(cx > c.x - 30 && cx < c.x + c.w + 30 && cy > c.y - 40 && cy < c.y + c.h + 40) {
+                cars.splice(i, 1);
+                smogCleared++; 
+                spawnFlowerAt(c.x + c.w/2, c.y + c.h);
+                spawnParticles(c.x + c.w/2, c.y, '#e74c3c', 25); 
+                spawnParticles(c.x + c.w/2, c.y, '#f1c40f', 25); 
+                hitSomething = true;
+            }
+        }
+
+        // 3. Grab Items (Drops + Boots)
+        for(let i = waterDrops.length - 1; i >= 0; i--) {
+            let w = waterDrops[i];
+            if(Math.hypot(cx - w.x, cy - w.y) < 60) {
+                activateRain(); 
+                waterDrops.splice(i, 1);
+                spawnParticles(w.x, w.y, '#3498db', 30);
+            }
+        }
+        
+        for(let i = speedBoots.length - 1; i >= 0; i--) {
+            let b = speedBoots[i];
+            if(Math.hypot(cx - b.x, cy - b.y) < 60) {
+                activateSpeedBoost(); 
+                speedBoots.splice(i, 1);
+                spawnParticles(b.x, b.y, '#f39c12', 30);
+            }
+        }
+
+        if(hitSomething) updateHUD();
+    }
+
+    function activateRain() {
+        rainTimer = 180; 
+        player.health = Math.min(player.maxHealth, player.health + 50); 
+        pmLevel = 25;
+        for(let i = clouds.length - 1; i >= 0; i--) {
+            let c = clouds[i];
+            if(c.active) { 
+                c.active = false; 
+                smogCleared++; 
+                spawnParticles(c.x, c.y, '#ecf0f1', 15); 
+            }
+        }
+        updateHUD();
+    }
+    
+    function activateSpeedBoost() {
+        player.speedBoostTimer = 540; // 9 seconds * 60 frames
+        player.speed = player.baseSpeed * 1.5;
+        document.querySelector('.stat-group').classList.add('speed-boost-active');
+    }
+
+    // --- Game Logic ---
+
+    function checkNameAndStart() {
+        const input = document.getElementById('username');
+        if(input.value.trim() === "") { 
+            alert("Please enter a name / Введите имя"); 
+            return; 
+        }
+        userName = input.value.trim();
+        startGame();
+    }
+
+    function startGame() {
+        document.getElementById('menu-screen').classList.add('hidden');
+        resetGame();
+    }
+
+    function resetGame() {
+        if(animationId) cancelAnimationFrame(animationId);
+        document.getElementById('game-over-screen').classList.add('hidden');
+        
+        activeFlowers = 0; 
+        lostFlowers = 0; 
+        smogCleared = 0; 
+        frames = 0; 
+        rainTimer = 0;
+        difficultyFactor = 1.0; 
+        pmLevel = 35;
+
+        player.health = player.maxHealth; 
+        player.hurtCooldown = 0;
+        player.x = width/2 - player.w/2; 
+        player.y = groundY + 50;
+        player.attacking = false; 
+        player.speedBoostTimer = 0; 
+        player.speed = player.baseSpeed;
+        
+        gardener.x = width*0.7; 
+        gardener.y = groundY + 80; 
+        gardener.seedTimer = 0;
+        
+        flowers = []; 
+        seeds = []; 
+        clouds = []; 
+        cars = []; 
+        waterDrops = []; 
+        speedBoots = [];
+        particles = []; 
+        smokeParticles = []; 
+        exhaustParticles = []; 
+        rainParticles = []; 
+        boostParticles = [];
+        
+        document.querySelector('.stat-group').classList.remove('speed-boost-active');
+        
+        updateHUD();
+        isPlaying = true;
+        gameLoop();
+    }
+
+    function gameOver() {
+        isPlaying = false;
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        document.getElementById('end-flowers').innerText = activeFlowers;
+        document.getElementById('end-lost').innerText = lostFlowers;
+        document.getElementById('end-cleared').innerText = smogCleared;
+        updateHallOfFame();
+    }
+
+    function updateHallOfFame() {
+        let hof = JSON.parse(localStorage.getItem('samrattama_hof') || '[]');
+        let finalScore = smogCleared + (activeFlowers * 2);
+        hof.push({ name: userName, score: finalScore });
+        hof.sort((a, b) => b.score - a.score);
+        hof = hof.slice(0, 5);
+        localStorage.setItem('samrattama_hof', JSON.stringify(hof));
+        const list = document.getElementById('hof-list');
+        list.innerHTML = `<h3 style="text-align:center; margin:0 0 12px 0; border-bottom:2px solid #f39c12; padding-bottom:8px; color:#f39c12;">HALL OF FAME</h3>`;
+        hof.forEach((entry, idx) => {
+            let medalColor = idx === 0 ? '#f1c40f' : idx === 1 ? '#95a5a6' : idx === 2 ? '#cd7f32' : '#bdc3c7';
+            list.innerHTML += `<div class="hof-item"><span style="color:${medalColor}">${idx+1}. ${entry.name}</span><span style="color:${medalColor}">${entry.score}</span></div>`;
+        });
+    }
+
+    function updateHUD() {
+        activeFlowers = flowers.filter(f => f.active).length;
+        document.getElementById('flower-count').innerText = activeFlowers;
+        document.getElementById('lost').innerText = lostFlowers;
+        document.getElementById('smog-cleared').innerText = smogCleared;
+        
+        let hpPercent = (player.health / player.maxHealth) * 100;
+        document.getElementById('hp-fill').style.width = hpPercent + "%";
+        
+        let targetPM = 35 + (clouds.filter(c => c.active).length * 20);
+        if(rainTimer > 0) targetPM = 25;
+        
+        pmLevel += (targetPM - pmLevel) * 0.1;
+        let displayPM = Math.floor(pmLevel);
+        document.getElementById('pm-val').innerText = displayPM;
+        let pmEl = document.getElementById('pm-val');
+        if(displayPM < 50) pmEl.style.color = "#2ecc71";
+        else if(displayPM < 100) pmEl.style.color = "#f1c40f";
+        else if(displayPM < 150) pmEl.style.color = "#e67e22";
+        else if(displayPM < 250) pmEl.style.color = "#e74c3c";
+        else pmEl.style.color = "#8e44ad";
+    }
+
+    function spawnFlowerAt(x, y) {
+        const colors = ['#e91e63', '#ffeb3b', '#ff5722', '#9c27b0', '#00bcd4'];
+        flowers.push({
+            x: x, y: y,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            growth: 0.1, 
+            active: true
+        });
+        updateHUD();
+    }
+
+    function spawnCloud() {
+        if(rainTimer > 0) return;
+        clouds.push({ 
+            x: Math.random() * width, 
+            y: groundY - 150, 
+            size: 25, 
+            speed: (Math.random() * 1.5 + 0.5) * difficultyFactor, 
+            active: true 
+        });
+    }
+
+    function spawnCar() {
+        let fromRight = Math.random() > 0.5;
+        let carY = Math.random() * (height - groundY - 60) + groundY + 10;
+        let speed = (Math.random() > 0.5 ? 6 : 8) * Math.min(2.5, difficultyFactor); 
+        let carColors = ['#e74c3c', '#3498db', '#9b59b6', '#e67e22'];
+        cars.push({ 
+            x: fromRight ? width + 80 : -80, 
+            y: carY, 
+            vx: fromRight ? -speed : speed, 
+            w: 80, 
+            h: 40, 
+            color: carColors[Math.floor(Math.random() * carColors.length)]
+        });
+    }
+
+    function spawnWaterDrop() { 
+        waterDrops.push({ 
+            x: Math.random() * (width - 60) + 30, 
+            y: Math.random() * (height - groundY - 60) + groundY + 30, 
+            floatOffset: Math.random() * 100 
+        }); 
+    }
+
+    function spawnBoots() { 
+        speedBoots.push({ 
+            x: Math.random() * (width - 60) + 30, 
+            y: Math.random() * (height - groundY - 60) + groundY + 30, 
+            floatOffset: Math.random() * 100 
+        }); 
+    }
+
+    function updateGardener() {
+        if (frames % 60 === 0 && Math.random() < 0.5) {
+            gardener.dx = (Math.random() - 0.5) * 4;
+        }
+        if (frames % 60 === 0 && Math.random() < 0.5) {
+            gardener.dy = (Math.random() - 0.5) * 2;
+        }
+        
+        gardener.x += gardener.dx; 
+        gardener.y += gardener.dy;
+        gardener.facingRight = gardener.dx > 0;
+        
+        if (gardener.x < 0 || gardener.x > width - gardener.w) gardener.dx *= -1;
+        if (gardener.y < groundY || gardener.y > height - gardener.h) gardener.dy *= -1;
+        
+        gardener.x = Math.max(0, Math.min(width - gardener.w, gardener.x));
+        gardener.y = Math.max(groundY, Math.min(height - gardener.h, gardener.y));
+
+        if (flowers.length + seeds.length < 25) { 
+            gardener.seedTimer--;
+            if (gardener.seedTimer <= 0) {
+                const seedColors = ['#D2B48C', '#e91e63', '#f1c40f', '#3498db'];
+                seeds.push({ 
+                    x: gardener.x + gardener.w / 2, 
+                    y: gardener.y + gardener.h, 
+                    life: 120,
+                    color: seedColors[Math.floor(Math.random() * seedColors.length)]
+                });
+                gardener.seedTimer = gardener.seedInterval;
+            }
+        }
+    }
+
+    function update() {
+        frames++;
+        
+        if(player.hurtCooldown > 0) player.hurtCooldown--;
+        
+        if(player.attacking) {
+            player.attackTimer--;
+            if(player.attackTimer <= 0) { 
+                player.attacking = false; 
+                document.getElementById('attack-indicator').classList.remove('pressed'); 
+            }
+        }
+        
+        // Speed Boost Logic
+        if(player.speedBoostTimer > 0) {
+            player.speedBoostTimer--;
+            if(frames % 5 === 0 && player.moving) {
+                boostParticles.push({
+                    x: player.x + player.w/2 + (Math.random() - 0.5) * 10, 
+                    y: player.y + player.h, 
+                    life: 20
+                });
+            }
+            if(player.speedBoostTimer === 0) {
+                player.speed = player.baseSpeed;
+                document.querySelector('.stat-group').classList.remove('speed-boost-active');
+            }
+        }
+
+        if(frames % 300 === 0) difficultyFactor += 0.25;
+        
+        updateGardener();
+        
+        for (let i = seeds.length - 1; i >= 0; i--) {
+            seeds[i].life--;
+            if (seeds[i].life <= 0) { 
+                spawnFlowerAt(seeds[i].x, seeds[i].y); 
+                seeds.splice(i, 1); 
+            }
+        }
+
+        if(rainTimer > 0) {
+            rainTimer--;
+            for(let i = 0; i < 5; i++) {
+                rainParticles.push({ 
+                    x: Math.random() * width, 
+                    y: -20, 
+                    vx: 0, 
+                    vy: 15, 
+                    life: 60 
+                });
+            }
+        }
+
+        player.moving = false;
+        if(joystick.active) {
+            player.moving = true;
+            let moveX = Math.max(-player.speed, Math.min(player.speed, joystick.dx * 0.05));
+            let moveY = Math.max(-player.speed, Math.min(player.speed, joystick.dy * 0.05));
+            player.x += moveX;
+            player.y += moveY;
+            player.facingRight = joystick.dx >= 0;
+        }
+        player.x = Math.max(0, Math.min(width - player.w, player.x));
+        player.y = Math.max(groundY, Math.min(height - player.h, player.y));
+
+        let cloudRate = Math.max(15, Math.floor(100 / difficultyFactor));
+        if(frames % cloudRate === 0) spawnCloud();
+        
+        let carRate = Math.max(100, Math.floor(600 / difficultyFactor)); 
+        if(frames % carRate === 0) spawnCar(); 
+        
+        if(frames % 600 === 0) spawnWaterDrop();
+        if(frames % 900 === 0) spawnBoots(); 
+
+        flowers.forEach(f => { 
+            if(f.active && f.growth < 1) f.growth += 0.01; 
+        });
+
+        for(let i = cars.length - 1; i >= 0; i--) {
+            let c = cars[i]; 
+            c.x += c.vx;
+            
+            if(frames % 5 === 0) {
+                exhaustParticles.push({ 
+                    x: c.vx > 0 ? c.x : c.x + c.w, 
+                    y: c.y + c.h - 5, 
+                    vx: c.vx > 0 ? -1 : 1, 
+                    vy: -0.5, 
+                    life: 40 
+                });
+            }
+            
+            if(player.hurtCooldown === 0 && 
+               player.x < c.x + c.w && 
+               player.x + player.w > c.x && 
+               player.y < c.y + c.h && 
+               player.y + player.h > c.y) {
+                hurtPlayer(30); 
+                spawnParticles(player.x + player.w/2, player.y + player.h/2, '#e74c3c', 30);
+            }
+            
+            if(c.x < -100 || c.x > width + 100) {
+                cars.splice(i, 1);
+            }
+        }
+
+        for(let i = clouds.length - 1; i >= 0; i--) {
+            let c = clouds[i];
+            if(!c.active) {
+                clouds.splice(i, 1);
+                continue;
+            }
+            
+            let target = flowers.find(f => f.active && f.growth > 0.5);
+            if(target) {
+                let dx = target.x - c.x;
+                let dy = target.y - c.y;
+                let dist = Math.hypot(dx, dy);
+                if(dist > 0) {
+                    c.x += (dx / dist) * c.speed; 
+                    c.y += (dy / dist) * c.speed;
+                }
+                if(dist < 15) { 
+                    target.active = false; 
+                    lostFlowers++; 
+                    spawnParticles(target.x, target.y, '#7f8c8d', 25); 
+                    updateHUD(); 
+                }
+            } else {
+                c.y += Math.sin(frames * 0.05) * 0.5; 
+                c.x += Math.cos(frames * 0.05) * 0.5;
+            }
+            
+            if(player.hurtCooldown === 0) {
+                let pDist = Math.hypot((player.x + player.w/2) - c.x, (player.y + player.h/2) - c.y);
+                if(pDist < c.size + 15) { 
+                    hurtPlayer(20); 
+                    spawnParticles(player.x + player.w/2, player.y + player.h/2, '#e74c3c', 25); 
+                }
+            }
+        }
+
+        if(frames % 4 === 0) {
+            smokeParticles.push({ 
+                x: width * 0.9 + 15 + (Math.random() - 0.5) * 10, 
+                y: groundY - 140, 
+                vx: (Math.random() - 0.5) * 0.5, 
+                vy: -Math.random() * 1.5 - 0.5, 
+                life: 80, 
+                size: Math.random() * 6 + 4 
+            });
+        }
+
+        flowers = flowers.filter(f => f.active);
+        particles = particles.filter(p => p.life > 0);
+        smokeParticles = smokeParticles.filter(p => p.life > 0);
+        exhaustParticles = exhaustParticles.filter(p => p.life > 0);
+        rainParticles = rainParticles.filter(p => p.y < height);
+        boostParticles = boostParticles.filter(p => p.life > 0);
+
+        updateHUD();
+    }
+
+    function hurtPlayer(dmg) {
+        player.health = Math.max(0, player.health - dmg); 
+        player.hurtCooldown = 60; 
+        updateHUD();
+        if(player.health <= 0) gameOver();
+    }
+
+    function spawnParticles(x, y, color, count = 15) {
+        for(let i = 0; i < count; i++) {
+            particles.push({ 
+                x: x, 
+                y: y, 
+                vx: (Math.random() - 0.5) * 12, 
+                vy: (Math.random() - 0.5) * 12, 
+                color: color, 
+                life: 25, 
+                size: Math.random() * 4 + 3 
+            });
+        }
+    }
+
+    // --- DRAWING FUNCTIONS ---
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        drawBackground();
+
+        // Seeds (with glow effect)
+        seeds.forEach(s => {
+            ctx.save();
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = s.color;
+            ctx.fillStyle = s.color; 
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // Flowers (enhanced)
+        flowers.forEach(f => {
+            let h = f.growth * 40;
+            let r = f.growth * 8;
+            
+            // Stem with gradient
+            let stemGrad = ctx.createLinearGradient(f.x, f.y - h, f.x, f.y);
+            stemGrad.addColorStop(0, '#228B22');
+            stemGrad.addColorStop(1, '#006400');
+            ctx.fillStyle = stemGrad;
+            ctx.fillRect(f.x - 2, f.y - h, 4, h);
+            
+            if(f.growth > 0.2) {
+                ctx.save();
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = f.color;
+                
+                // Petals
+                ctx.fillStyle = f.color;
+                for(let i = 0; i < 5; i++) {
+                    let a = (i * Math.PI * 2) / 5;
+                    ctx.beginPath(); 
+                    ctx.arc(f.x + Math.cos(a) * r, (f.y - h) + Math.sin(a) * r, r * 0.8, 0, Math.PI * 2); 
+                    ctx.fill();
+                }
+                
+                // Center
+                ctx.fillStyle = '#ffe'; 
+                ctx.beginPath(); 
+                ctx.arc(f.x, f.y - h, r * 0.5, 0, Math.PI * 2); 
+                ctx.fill();
+                ctx.restore();
+            }
+        });
+
+        drawItems();
+
+        // Cars (enhanced)
+        cars.forEach(c => {
+            ctx.save();
+            
+            // Car body with gradient
+            let carGrad = ctx.createLinearGradient(c.x, c.y, c.x, c.y + c.h);
+            carGrad.addColorStop(0, c.color);
+            carGrad.addColorStop(1, shadeColor(c.color, -30));
+            ctx.fillStyle = carGrad;
+            ctx.beginPath(); 
+            ctx.roundRect(c.x, c.y, c.w, c.h, 5); 
+            ctx.fill();
+            
+            // Cabin
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.beginPath(); 
+            ctx.roundRect(c.x + 10, c.y - 12, c.w - 20, 15, [5, 5, 0, 0]); 
+            ctx.fill();
+            
+            // Windows
+            ctx.fillStyle = 'rgba(135, 206, 235, 0.7)'; 
+            ctx.fillRect(c.x + 12, c.y - 8, 20, 8); 
+            ctx.fillRect(c.x + c.w - 32, c.y - 8, 20, 8);
+            
+            // Wheels with shine
+            ctx.fillStyle = '#000'; 
+            ctx.beginPath(); 
+            ctx.arc(c.x + 15, c.y + c.h, 9, 0, Math.PI * 2); 
+            ctx.fill(); 
+            ctx.beginPath(); 
+            ctx.arc(c.x + c.w - 15, c.y + c.h, 9, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            ctx.fillStyle = '#444';
+            ctx.beginPath(); 
+            ctx.arc(c.x + 15, c.y + c.h, 5, 0, Math.PI * 2); 
+            ctx.fill(); 
+            ctx.beginPath(); 
+            ctx.arc(c.x + c.w - 15, c.y + c.h, 5, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            // Lights
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = c.vx > 0 ? '#f1c40f' : '#e74c3c';
+            ctx.fillStyle = c.vx > 0 ? '#f1c40f' : '#e74c3c'; 
+            ctx.fillRect(c.vx > 0 ? c.x + c.w - 5 : c.x, c.y + 10, 5, 10);
+            ctx.restore();
+        });
+
+        drawGardener();
+        drawPlayer();
+
+        // Clouds (enhanced)
+        clouds.forEach(c => {
+            if(!c.active) return;
+            
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = 'rgba(127, 140, 141, 0.8)';
+            ctx.fillStyle = 'rgba(189, 195, 199, 0.9)';
+            ctx.beginPath(); 
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2); 
+            ctx.arc(c.x - c.size * 0.7, c.y + c.size * 0.2, c.size * 0.8, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 0.7, c.y + c.size * 0.2, c.size * 0.8, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            // Evil face
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.fillRect(c.x - 8, c.y, 5, 5); 
+            ctx.fillRect(c.x + 3, c.y, 5, 5); 
+            ctx.fillRect(c.x - 6, c.y + 12, 12, 3);
+            ctx.restore();
+        });
+
+        // Particles (enhanced)
+        particles.forEach(p => { 
+            ctx.save();
+            ctx.globalAlpha = p.life / 25;
+            ctx.fillStyle = p.color; 
+            ctx.fillRect(p.x, p.y, p.size, p.size); 
+            ctx.restore();
+            p.x += p.vx; 
+            p.y += p.vy; 
+            p.vy += 0.3; // Gravity
+            p.life--; 
+        });
+        
+        exhaustParticles.forEach(p => { 
+            ctx.save();
+            ctx.globalAlpha = p.life / 40;
+            ctx.fillStyle = '#7f8c8d'; 
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            p.x += p.vx; 
+            p.y += p.vy; 
+            p.life--; 
+        });
+        
+        boostParticles.forEach(p => { 
+            ctx.save();
+            ctx.globalAlpha = p.life / 20;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#f1c40f';
+            ctx.fillStyle = '#f1c40f'; 
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            p.life--; 
+        });
+        
+        // Rain
+        ctx.save();
+        ctx.strokeStyle = 'rgba(52, 152, 219, 0.6)';
+        ctx.lineWidth = 2;
+        rainParticles.forEach(p => { 
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x, p.y + 10);
+            ctx.stroke();
+            p.y += p.vy; 
+        });
+        ctx.restore();
+    }
+
+    function drawItems() {
+        // Water Drop (enhanced)
+        waterDrops.forEach(w => {
+            let y = w.y + Math.sin((frames + w.floatOffset) * 0.05) * 5;
+            
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#3498db';
+            
+            let dropGrad = ctx.createRadialGradient(w.x, y - 6, 0, w.x, y, 12);
+            dropGrad.addColorStop(0, '#5dade2');
+            dropGrad.addColorStop(1, '#2980b9');
+            ctx.fillStyle = dropGrad;
+            
+            ctx.beginPath(); 
+            ctx.arc(w.x, y, 12, 0, Math.PI, false); 
+            ctx.lineTo(w.x, y - 18); 
+            ctx.fill();
+            
+            // Shine
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; 
+            ctx.beginPath();
+            ctx.arc(w.x - 4, y - 6, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        
+        // Speed Boots (enhanced)
+        speedBoots.forEach(b => {
+            let y = b.y + Math.sin((frames + b.floatOffset) * 0.1) * 5;
+            
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#f39c12';
+            
+            let bootGrad = ctx.createLinearGradient(b.x - 10, y - 15, b.x + 15, y + 15);
+            bootGrad.addColorStop(0, '#f39c12');
+            bootGrad.addColorStop(1, '#e67e22');
+            ctx.fillStyle = bootGrad;
+            
+            ctx.beginPath(); 
+            ctx.moveTo(b.x - 10, y - 15); 
+            ctx.lineTo(b.x + 5, y - 15); 
+            ctx.lineTo(b.x + 5, y + 5); 
+            ctx.lineTo(b.x + 15, y + 5); 
+            ctx.lineTo(b.x + 15, y + 15); 
+            ctx.lineTo(b.x - 10, y + 15); 
+            ctx.closePath(); 
+            ctx.fill();
+            
+            // Wing/Speed effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)'; 
+            ctx.beginPath(); 
+            ctx.moveTo(b.x - 5, y - 5); 
+            ctx.lineTo(b.x - 15, y - 15); 
+            ctx.lineTo(b.x - 5, y - 10); 
+            ctx.fill();
+            
+            ctx.restore();
+        });
+    }
+    
+    function drawHuman(x, y, w, h, colorBody, colorHead, isMoving, facingRight, isGardener) {
+        let cx = x + w/2;
+        let legOffset = isMoving ? Math.sin(frames * 0.2) * 8 : 0;
+        let armOffset = isMoving ? Math.cos(frames * 0.2) * 8 : 0;
+        
+        ctx.save();
+        
+        // Shadow (enhanced)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; 
+        ctx.beginPath(); 
+        ctx.ellipse(cx, y + h, w/1.5, 6, 0, 0, Math.PI * 2); 
+        ctx.fill();
+
+        // Legs
+        if (!isGardener) { 
+            let legGrad = ctx.createLinearGradient(cx - 10, y + h - 25, cx - 10, y + h);
+            legGrad.addColorStop(0, '#6d4c41');
+            legGrad.addColorStop(1, '#5d4037');
+            ctx.fillStyle = legGrad;
+            ctx.fillRect(cx - 10 - (facingRight ? legOffset : -legOffset), y + h - 25, 8, 25); 
+            ctx.fillRect(cx + 2 + (facingRight ? legOffset : -legOffset), y + h - 25, 8, 25);
+        } else { 
+            ctx.fillStyle = '#D2B48C'; 
+            ctx.fillRect(cx - 8 + legOffset, y + h - 10, 6, 10); 
+            ctx.fillRect(cx + 2 - legOffset, y + h - 10, 6, 10);
+        }
+        
+        // Body
+        if(isGardener) {
+            let bodyGrad = ctx.createLinearGradient(x + 5, y + 20, x + 5, y + 45);
+            bodyGrad.addColorStop(0, '#ec407a');
+            bodyGrad.addColorStop(1, '#e91e63');
+            ctx.fillStyle = bodyGrad;
+            ctx.fillRect(x + 5, y + 20, w - 10, 25);
+            
+            // Skirt
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y + 45);
+            ctx.lineTo(x - 5 + (Math.sin(frames * 0.1) * 2), y + h - 5);
+            ctx.lineTo(x + w + 5 + (Math.sin(frames * 0.1) * 2), y + h - 5);
+            ctx.fill();
+        } else {
+            let bodyGrad = ctx.createLinearGradient(x, y + 20, x, y + 55);
+            bodyGrad.addColorStop(0, '#f39c12');
+            bodyGrad.addColorStop(1, '#e67e22');
+            ctx.fillStyle = bodyGrad;
+            ctx.fillRect(x, y + 20, w, 35); 
+            
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.fillRect(x, y + 50, w, 5);
+        }
+        
+        // Head (with better skin tone)
+        let headGrad = ctx.createRadialGradient(cx, y + 10, 0, cx, y + 10, 15);
+        headGrad.addColorStop(0, '#ffe0bd');
+        headGrad.addColorStop(1, colorHead);
+        ctx.fillStyle = headGrad;
+        ctx.fillRect(cx - 10, y, 20, 20);
+        
+        if(isGardener) {
+            // Hat
+            ctx.fillStyle = '#3e2723'; 
+            ctx.fillRect(cx - 12, y - 5, 24, 10); 
+            ctx.fillRect(cx - 12, y, 6, 20); 
+            ctx.fillRect(cx + 6, y, 6, 20);
+        } else {
+            // Samrat's headband
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.fillRect(cx - 10, y, 20, 6); 
+            ctx.fillStyle = '#e74c3c'; 
+            ctx.fillRect(cx - 10, y + 6, 20, 4); 
+            if(facingRight) ctx.fillRect(cx - 15, y + 6, 5, 4);
+        }
+        
+        // Arms
+        ctx.fillStyle = colorHead;
+        if(isGardener) {
+            let plantY = Math.abs(Math.sin(frames * 0.1)) * 5; 
+            ctx.fillRect(cx - 15, y + 25 + plantY, 8, 15); 
+            ctx.fillRect(cx + 7, y + 25 + plantY, 8, 15);
+        } else {
+            // Back arm
+            ctx.fillRect(cx - 12 + (facingRight ? armOffset : -armOffset), y + 25, 6, 20);
+            
+            // Front arm with weapon
+            ctx.save();
+            let frontArmX = cx + 6 + (facingRight ? -armOffset : armOffset);
+            ctx.translate(frontArmX, y + 25);
+            
+            if(player.attacking) { 
+                let swingAngle = (Math.PI/2) * (player.attackTimer/10) * (facingRight ? 1 : -1); 
+                ctx.rotate(swingAngle - Math.PI/4); 
+            }
+            
+            ctx.fillRect(0, 0, 6, 20); 
+            ctx.translate(3, 18); 
+            
+            if(!facingRight) ctx.scale(-1, 1);
+            
+            // Sword handle
+            ctx.fillStyle = '#95a5a6'; 
+            ctx.fillRect(-6, 0, 12, 4); 
+            
+            // Sword blade with gradient
+            let bladeGrad = ctx.createLinearGradient(-2, 4, 2, 4);
+            bladeGrad.addColorStop(0, '#95a5a6');
+            bladeGrad.addColorStop(0.5, '#ecf0f1');
+            bladeGrad.addColorStop(1, '#95a5a6');
+            ctx.fillStyle = bladeGrad;
+            ctx.fillRect(-2, 4, 4, 30);
+            
+            if(player.attacking) { 
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; 
+                ctx.lineWidth = 3; 
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#fff';
+                ctx.beginPath(); 
+                ctx.arc(0, 0, 40, 0, Math.PI, false); 
+                ctx.stroke(); 
+            }
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    function drawGardener() { 
+        drawHuman(gardener.x, gardener.y, gardener.w, gardener.h, '#e91e63', '#ffccbc', true, gardener.facingRight, true); 
+    }
+
+    function drawPlayer() { 
+        if(player.hurtCooldown > 0 && frames % 4 < 2) return; 
+        drawHuman(player.x, player.y, player.w, player.h, '#f39c12', '#ffccbc', player.moving, player.facingRight, false); 
+    }
+
+    function drawBackground() {
+        // Sky gradient
+        let grd = ctx.createLinearGradient(0, 0, 0, height); 
+        grd.addColorStop(0, "#87CEEB"); 
+        grd.addColorStop(0.6, "#E0F7FA"); 
+        grd.addColorStop(0.6, "#27ae60"); 
+        grd.addColorStop(1, "#2ecc71"); 
+        ctx.fillStyle = grd; 
+        ctx.fillRect(0, 0, width, height);
+        
+        // Mountains with better shading
+        ctx.save();
+        ctx.fillStyle = 'rgba(44, 62, 80, 0.4)'; 
+        ctx.beginPath(); 
+        ctx.moveTo(0, groundY); 
+        for(let i = 0; i <= width; i += 50) {
+            ctx.lineTo(i, groundY - 100 - Math.sin(i * 0.01 + frames * 0.001) * 50);
+        }
+        ctx.lineTo(width, groundY); 
+        ctx.fill();
+        
+        // Mountain highlights
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.beginPath(); 
+        ctx.moveTo(0, groundY); 
+        for(let i = 0; i <= width; i += 50) {
+            ctx.lineTo(i, groundY - 95 - Math.sin(i * 0.01 + frames * 0.001) * 50);
+        }
+        ctx.lineTo(width, groundY); 
+        ctx.fill();
+        ctx.restore();
+
+        // City buildings
+        ctx.save();
+        for(let i = 0; i < width; i += 40) { 
+            let h = 20 + Math.sin(i * 123) * 20 + 30;
+            
+            let buildGrad = ctx.createLinearGradient(i, groundY - h, i + 45, groundY);
+            buildGrad.addColorStop(0, 'rgba(52, 73, 94, 0.6)');
+            buildGrad.addColorStop(1, 'rgba(44, 62, 80, 0.5)');
+            ctx.fillStyle = buildGrad;
+            ctx.fillRect(i, groundY - h, 45, h);
+            
+            // Windows
+            ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+            for(let j = 0; j < h; j += 12) {
+                for(let k = 5; k < 40; k += 12) {
+                    if(Math.random() > 0.3) {
+                        ctx.fillRect(i + k, groundY - h + j + 5, 6, 6);
+                    }
+                }
+            }
+        }
+        ctx.restore();
+
+        // Hotel Kazakhstan (enhanced)
+        let hkX = width * 0.5; 
+        let hkW = 60; 
+        let hkH = 180;
+        
+        ctx.save();
+        let hotelGrad = ctx.createLinearGradient(hkX - hkW/2, groundY - hkH, hkX + hkW/2, groundY);
+        hotelGrad.addColorStop(0, 'rgba(70, 90, 110, 0.7)');
+        hotelGrad.addColorStop(1, 'rgba(60, 80, 100, 0.6)');
+        ctx.fillStyle = hotelGrad;
+        ctx.fillRect(hkX - hkW/2, groundY - hkH, hkW, hkH);
+        
+        // Crown
+        ctx.beginPath(); 
+        ctx.moveTo(hkX - hkW/2 - 10, groundY - hkH + 20); 
+        ctx.quadraticCurveTo(hkX, groundY - hkH - 30, hkX + hkW/2 + 10, groundY - hkH + 20); 
+        ctx.lineTo(hkX + hkW/2, groundY - hkH); 
+        ctx.lineTo(hkX - hkW/2, groundY - hkH); 
+        ctx.fill();
+        
+        // Spire
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(hkX - 2, groundY - hkH - 40, 4, 40);
+        
+        // Windows
+        ctx.fillStyle = 'rgba(241, 196, 15, 0.4)';
+        for(let j = 0; j < hkH; j += 15) {
+            for(let k = 8; k < hkW - 8; k += 12) {
+                if(Math.random() > 0.2) {
+                    ctx.fillRect(hkX - hkW/2 + k, groundY - hkH + j + 5, 6, 8);
+                }
+            }
+        }
+        ctx.restore();
+
+        // TV Tower (enhanced)
+        let tx = width * 0.2;
+        ctx.save();
+        
+        let towerGrad = ctx.createLinearGradient(tx - 3, groundY - 220, tx + 3, groundY);
+        towerGrad.addColorStop(0, '#95a5a6');
+        towerGrad.addColorStop(1, '#7f8c8d');
+        ctx.fillStyle = towerGrad;
+        ctx.fillRect(tx - 3, groundY - 220, 6, 220);
+        
+        ctx.fillStyle = '#7f8c8d';
+        ctx.beginPath(); 
+        ctx.ellipse(tx, groundY - 150, 20, 10, 0, 0, Math.PI * 2); 
+        ctx.fill();
+        ctx.restore();
+
+        // Smoke Stack (enhanced)
+        let pX = width * 0.9;
+        ctx.save();
+        
+        let stackGrad = ctx.createLinearGradient(pX, groundY - 120, pX + 30, groundY);
+        stackGrad.addColorStop(0, '#666');
+        stackGrad.addColorStop(1, '#555');
+        ctx.fillStyle = stackGrad;
+        ctx.fillRect(pX, groundY - 120, 30, 120);
+        
+        ctx.fillStyle = '#444';
+        ctx.fillRect(pX + 5, groundY - 125, 20, 5);
+        
+        smokeParticles.forEach(p => { 
+            ctx.globalAlpha = p.life / 100;
+            ctx.fillStyle = '#7f8c8d'; 
+            ctx.beginPath(); 
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); 
+            ctx.fill(); 
+            p.x += p.vx; 
+            p.y += p.vy; 
+            p.life--; 
+        });
+        ctx.restore();
+    }
+    
+    // Helper function to shade colors
+    function shadeColor(color, percent) {
+        let R = parseInt(color.substring(1, 3), 16);
+        let G = parseInt(color.substring(3, 5), 16);
+        let B = parseInt(color.substring(5, 7), 16);
+
+        R = parseInt(R * (100 + percent) / 100);
+        G = parseInt(G * (100 + percent) / 100);
+        B = parseInt(B * (100 + percent) / 100);
+
+        R = (R < 255) ? R : 255;  
+        G = (G < 255) ? G : 255;  
+        B = (B < 255) ? B : 255;  
+
+        R = Math.round(R);
+        G = Math.round(G);
+        B = Math.round(B);
+
+        let RR = ((R.toString(16).length == 1) ? "0" + R.toString(16) : R.toString(16));
+        let GG = ((G.toString(16).length == 1) ? "0" + G.toString(16) : G.toString(16));
+        let BB = ((B.toString(16).length == 1) ? "0" + B.toString(16) : B.toString(16));
+
+        return "#" + RR + GG + BB;
+    }
+
+    function gameLoop() { 
+        if(!isPlaying) return; 
+        update(); 
+        draw(); 
+        animationId = requestAnimationFrame(gameLoop); 
+    }
+    
+    // Initial draw
+    drawBackground(); 
+    drawPlayer();
+</script>
+</body>
+</html>
